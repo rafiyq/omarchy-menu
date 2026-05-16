@@ -1,0 +1,3 @@
+# External commands provided by the Omarchy environment
+# shellcheck directive: disable=SC2312
+disable=SC2312
