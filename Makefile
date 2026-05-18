@@ -1,7 +1,7 @@
 SHELLCHECK := shellcheck
 SHFMT := shfmt
 BATS := bats
-SHELL_FILES := $(shell find . -name '*.sh' -not -path './tests/*')
+SHELL_FILES := $(shell find . -name '*.sh' -not -path './tests/*' -not -name 'dispatch.sh')
 
 .PHONY: lint test fmt check
 

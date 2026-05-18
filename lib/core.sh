@@ -1,44 +1,86 @@
 #!/bin/bash
-# Core utility functions for omarchy-menu
+# Core utility functions — terminal, install helpers
+# Sources: lib/platform.sh, lib/pkg.sh, lib/services.sh
 
-# Terminal execution
-terminal() {
-  xdg-terminal-exec --app-id=org.omarchy.terminal "$@"
+# Detect available terminal emulator
+_detect_terminal() {
+  local t
+  for t in foot kitty alacritty ghostty wezterm; do
+    command -v "$t" >/dev/null 2>&1 && { echo "$t"; return; }
+  done
+  echo ""
 }
 
-# Present a floating terminal with presentation mode
+# Execute command in a terminal emulator
+terminal() {
+  local term
+  term=$(_detect_terminal)
+  if [[ -n "$term" ]]; then
+    "$term" "$@" &
+  elif command -v xdg-terminal-exec >/dev/null 2>&1; then
+    xdg-terminal-exec --app-id=org.omarchy.terminal "$@"
+  else
+    echo "Error: no terminal emulator found" >&2
+    return 1
+  fi
+}
+
+# Present a floating terminal with presentation mode (pause after execution)
 present_terminal() {
-  omarchy-launch-floating-terminal-with-presentation "$1"
+  local term
+  term=$(_detect_terminal)
+  if [[ -n "$term" ]]; then
+    "$term" -- /bin/bash -c "$1; echo; read -rp 'Press Enter to close...'"
+  else
+    echo "Error: no terminal emulator found" >&2
+    return 1
+  fi
 }
 
 # Open file in editor
 open_in_editor() {
   notify-send -u low "Editing config file" "$1"
-  omarchy-launch-editor "$1"
+  local editor="${EDITOR:-nvim}"
+  if command -v "$editor" >/dev/null 2>&1; then
+    terminal "$editor" "$1"
+  else
+    terminal vi "$1"
+  fi
 }
 
-# Installation functions
+# Installation helpers — delegate to pkg.sh
 install() {
-  present_terminal "echo 'Installing $1...'; omarchy-pkg-add '$2'"
+  local package
+  package=$(pkg_name "$2")
+  present_terminal "echo 'Installing $1...'; pkg_install '$package'"
 }
 
 install_and_launch() {
-  present_terminal "echo 'Installing $1...'; omarchy-pkg-add '$2' && setsid gtk-launch '$3'"
+  local package
+  package=$(pkg_name "$2")
+  present_terminal "echo 'Installing $1...'; pkg_install '$package' && setsid gtk-launch '$3'"
 }
 
 install_font() {
-  present_terminal "echo 'Installing $1...'; omarchy-pkg-add '$2' && sleep 2 && omarchy-font-set '$3'"
+  local package
+  package=$(pkg_name "$2")
+  present_terminal "echo 'Installing $1...'; pkg_install '$package' && sleep 2 && font_set '$3'"
 }
 
 install_terminal() {
-  present_terminal "omarchy-install-terminal '$1'"
+  local package
+  package=$(pkg_name "$1")
+  pkg_install "$package"
 }
 
-# AUR installation functions
 aur_install() {
-  present_terminal "echo 'Installing $1 from AUR...'; omarchy-pkg-aur-add '$2'"
+  local package
+  package=$(pkg_name "$2")
+  present_terminal "echo 'Installing $1 from AUR...'; pkg_thirdparty_install '$package'"
 }
 
 aur_install_and_launch() {
-  present_terminal "echo 'Installing $1 from AUR...'; omarchy-pkg-aur-add '$2' && setsid gtk-launch '$3'"
+  local package
+  package=$(pkg_name "$2")
+  present_terminal "echo 'Installing $1 from AUR...'; pkg_thirdparty_install '$package' && setsid gtk-launch '$3'"
 }

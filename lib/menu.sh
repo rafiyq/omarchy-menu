@@ -3,25 +3,24 @@
 
 # Get menu backend configuration
 get_menu_backend() {
-  # Check environment variable first
-  if [[ -n "$OMARCHY_MENU_BACKEND" ]]; then
+  # Check environment variable (new name first, then fallback to old)
+  if [[ -n "${WMENU_MENU_BACKEND:-}" ]]; then
+    echo "$WMENU_MENU_BACKEND"
+    return
+  fi
+  if [[ -n "${OMARCHY_MENU_BACKEND:-}" ]]; then
     echo "$OMARCHY_MENU_BACKEND"
     return
   fi
 
-  # Check config file
-  local config_file="$HOME/.config/omarchy/menu.conf"
-  if [[ -f "$config_file" ]]; then
-    local backend
-    backend=$(grep "^MENU_BACKEND=" "$config_file" | cut -d'=' -f2)
-    if [[ -n "$backend" ]]; then
-      echo "$backend"
-      return
-    fi
+  # Auto-detect: prefer walker, then rofi, then fall back to tui
+  if command_available walker; then
+    echo "walker"
+  elif command_available rofi; then
+    echo "rofi"
+  else
+    echo "tui"
   fi
-
-  # Default to walker for backward compatibility
-  echo "walker"
 }
 
 # Check if a command is available
@@ -85,6 +84,11 @@ show_menu() {
       fi
       # Original walker implementation (using walker directly)
       echo -e "$options" | walker --dmenu --width 295 --minheight 1 --maxheight 630 -p "$prompt…" "${args[@]}" 2>/dev/null
+      return
+      ;;
+    tui)
+      # Pure bash TUI menu — no external dependencies
+      tui_menu "$prompt" "$options"
       return
       ;;
     *)

@@ -1,8 +1,15 @@
 #!/bin/bash
-# omarchy:summary=Launch the Omarchy Menu or takes a parameter to jump straight to a submenu.
+# Main entry point
+# Sources libraries and modules, defines main menu
 
 # Source library files
+source "$(dirname "$0")/lib/platform.sh"
+source "$(dirname "$0")/lib/pkg.sh"
+source "$(dirname "$0")/lib/wm.sh"
+source "$(dirname "$0")/lib/capture.sh"
+source "$(dirname "$0")/lib/services.sh"
 source "$(dirname "$0")/lib/core.sh"
+source "$(dirname "$0")/lib/tui.sh"
 source "$(dirname "$0")/lib/menu.sh"
 source "$(dirname "$0")/lib/navigation.sh"
 
@@ -21,16 +28,15 @@ source "$(dirname "$0")/modules/system.sh"
 # Source extensions AFTER modules so user overrides take effect
 source "$(dirname "$0")/lib/extensions.sh"
 
-# Define show_main_menu
 show_main_menu() {
   local choice
-  choice=$(menu "Go" "󰀻 Apps\n󰧑 Learn\n󱓞 Trigger\n Style\n Setup\n󰉉 Install\n󰭌 Remove\n Update\n About\n System")
+  choice=$(menu "Go" "󰀻 Apps\n  Trigger\n Style\n Setup\n󰉉 Install\n󰭌 Remove\n Update\n󰧑 Documentation\n About\n System")
   go_to_menu "$choice"
 }
 
 toggle_existing_menu
 
-if [[ -n $1 ]]; then
+if [[ ${#@} -gt 0 ]]; then
   BACK_TO_EXIT=true
   go_to_menu "$1"
 else

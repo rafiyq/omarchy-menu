@@ -22,8 +22,8 @@ show_apps_menu() {
         return 1
       fi
       ;;
-    *)
-      echo "Error: unknown menu backend '$backend'" >&2
+    tui)
+      echo "Error: application launcher requires a GUI backend" >&2
       return 1
       ;;
   esac

@@ -2,22 +2,25 @@
 # System setup and configuration menu functions
 
 show_setup_menu() {
-  local options="  Audio\n  Wifi\n󰂯  Bluetooth\n󱐋  Power Profile\n  System Sleep\n󰍹  Monitors"
-  [[ -f ~/.config/hypr/bindings.conf ]] && options="$options\n  Keybindings"
-  [[ -f ~/.config/hypr/input.conf ]] && options="$options\n  Input"
+  local options="  Audio\n  Wifi\n󰂯  Bluetooth\n󱐋  Power Profile\n󰍹  Monitors"
+  local kb_conf
+  kb_conf=$(wm_config_dir)/bindings.conf
+  [[ -f "$kb_conf" ]] && options="$options\n  Keybindings"
+  local input_conf
+  input_conf=$(wm_config_dir)/input.conf
+  [[ -f "$input_conf" ]] && options="$options\n  Input"
   options="$options\n  Defaults\n󰱔  DNS\n  Security\n  Config"
 
   case $(menu "Setup" "$options") in
-    *Audio*) omarchy-launch-audio ;;
-    *Wifi*) omarchy-launch-wifi ;;
-    *Bluetooth*) omarchy-launch-bluetooth ;;
+    *Audio*) launch_audio ;;
+    *Wifi*) launch_wifi ;;
+    *Bluetooth*) launch_bluetooth ;;
     *Power*) show_setup_power_menu ;;
-    *System*) show_setup_system_menu ;;
-    *Monitors*) open_in_editor ~/.config/hypr/monitors.conf ;;
-    *Keybindings*) open_in_editor ~/.config/hypr/bindings.conf ;;
-    *Input*) open_in_editor ~/.config/hypr/input.conf ;;
+    *Monitors*) open_in_editor "$(wm_config_dir)/monitors.conf" ;;
+    *Keybindings*) open_in_editor "$kb_conf" ;;
+    *Input*) open_in_editor "$input_conf" ;;
     *Defaults*) show_setup_default_menu ;;
-    *DNS*) present_terminal omarchy-setup-dns ;;
+    *DNS*) present_terminal setup_dns ;;
     *Security*) show_setup_security_menu ;;
     *Config*) show_setup_config_menu ;;
     *) back_to show_main_menu ;;
@@ -26,7 +29,7 @@ show_setup_menu() {
 
 show_setup_power_menu() {
   local profile
-  profile=$(menu "Power Profile" "$(omarchy-powerprofiles-list)" "" "$(powerprofilesctl get)")
+  profile=$(menu "Power Profile" "$(powerprofiles_list)" "" "$(powerprofilesctl get 2>/dev/null)")
 
   if [[ "$profile" == "CNCLD" || -z "$profile" ]]; then
     back_to show_setup_menu
@@ -36,18 +39,8 @@ show_setup_power_menu() {
 }
 
 show_setup_security_menu() {
-  case $(menu "Setup" "󰈷 Fingerprint\n Fido2") in
-    *Fingerprint*) present_terminal omarchy-setup-security-fingerprint ;;
-    *Fido2*) present_terminal omarchy-setup-security-fido2 ;;
-    *) back_to show_setup_menu ;;
-  esac
-}
-
-show_setup_default_menu() {
-  case $(menu "Default" " Browser\n Terminal\n Editor") in
-    *Browser*) show_setup_default_browser_menu ;;
-    *Terminal*) show_setup_default_terminal_menu ;;
-    *Editor*) show_setup_default_editor_menu ;;
+  case $(menu "Setup" "󰈷 Fingerprint") in
+    *Fingerprint*) present_terminal setup_security_fingerprint ;;
     *) back_to show_setup_menu ;;
   esac
 }
@@ -57,7 +50,7 @@ show_setup_default_menu() {
     *Browser*) show_setup_default_browser_menu ;;
     *Terminal*) show_setup_default_terminal_menu ;;
     *Editor*) show_setup_default_editor_menu ;;
-    *) show_setup_menu ;;
+    *) back_to show_setup_menu ;;
   esac
 }
 
@@ -67,7 +60,7 @@ browser_desktop_exists() {
 
 show_setup_default_browser_menu() {
   local options=""
-  browser_desktop_exists chromium.desktop && options="$options  Chromium"
+  browser_desktop_exists chromium.desktop && options="  Chromium"
   browser_desktop_exists google-chrome.desktop && options="${options:+$options\n}󰊯  Chrome"
   browser_desktop_exists brave-browser.desktop && options="${options:+$options\n}󰖟  Brave"
   browser_desktop_exists brave-origin-beta.desktop && options="${options:+$options\n}󰖟  Brave Origin"
@@ -76,7 +69,7 @@ show_setup_default_browser_menu() {
   browser_desktop_exists zen.desktop && options="${options:+$options\n}󰖟  Zen"
 
   local current=""
-  case "$(omarchy-default-browser)" in
+  case "$(default_browser)" in
     chromium) current="  Chromium" ;;
     chrome) current="󰊯  Chrome" ;;
     brave) current="󰖟  Brave" ;;
@@ -87,26 +80,26 @@ show_setup_default_browser_menu() {
   esac
 
   case $(menu "Default Browser" "$options" "" "$current") in
-    *Chromium*) omarchy-default-browser chromium ;;
-    *Chrome*) omarchy-default-browser chrome ;;
-    *"Brave Origin"*) omarchy-default-browser brave-origin ;;
-    *Brave*) omarchy-default-browser brave ;;
-    *Edge*) omarchy-default-browser edge ;;
-    *Firefox*) omarchy-default-browser firefox ;;
-    *Zen*) omarchy-default-browser zen ;;
+    *Chromium*) default_browser chromium ;;
+    *Chrome*) default_browser chrome ;;
+    *"Brave Origin"*) default_browser brave-origin ;;
+    *Brave*) default_browser brave ;;
+    *Edge*) default_browser edge ;;
+    *Firefox*) default_browser firefox ;;
+    *Zen*) default_browser zen ;;
     *) back_to show_setup_default_menu ;;
   esac
 }
 
 show_setup_default_terminal_menu() {
   local options=""
-  omarchy-cmd-present alacritty && options="$options  Alacritty"
-  omarchy-cmd-present foot && options="${options:+$options\n}  Foot"
-  omarchy-cmd-present ghostty && options="${options:+$options\n}  Ghostty"
-  omarchy-cmd-present kitty && options="${options:+$options\n}  Kitty"
+  command -v alacritty >/dev/null && options="  Alacritty"
+  command -v foot >/dev/null && options="${options:+$options\n}  Foot"
+  command -v ghostty >/dev/null && options="${options:+$options\n}  Ghostty"
+  command -v kitty >/dev/null && options="${options:+$options\n}  Kitty"
 
   local current=""
-  case "$(omarchy-default-terminal)" in
+  case "$(default_terminal)" in
     alacritty) current="  Alacritty" ;;
     foot) current="  Foot" ;;
     ghostty) current="  Ghostty" ;;
@@ -114,27 +107,27 @@ show_setup_default_terminal_menu() {
   esac
 
   case $(menu "Default Terminal" "$options" "" "$current") in
-    *Alacritty*) omarchy-default-terminal alacritty ;;
-    *Foot*) omarchy-default-terminal foot ;;
-    *Ghostty*) omarchy-default-terminal ghostty ;;
-    *Kitty*) omarchy-default-terminal kitty ;;
+    *Alacritty*) default_terminal alacritty ;;
+    *Foot*) default_terminal foot ;;
+    *Ghostty*) default_terminal ghostty ;;
+    *Kitty*) default_terminal kitty ;;
     *) back_to show_setup_default_menu ;;
   esac
 }
 
 show_setup_default_editor_menu() {
   local options=""
-  omarchy-cmd-present nvim && options="$options  Neovim"
-  omarchy-cmd-present code && options="${options:+$options\n}  VSCode"
-  omarchy-cmd-present cursor && options="${options:+$options\n}  Cursor"
-  omarchy-cmd-present zeditor && options="${options:+$options\n}  Zed"
-  omarchy-cmd-present sublime_text && options="${options:+$options\n}  Sublime Text"
-  omarchy-cmd-present helix && options="${options:+$options\n}  Helix"
-  omarchy-cmd-present vim && options="${options:+$options\n}  Vim"
-  omarchy-cmd-present emacs && options="${options:+$options\n}  Emacs"
+  command -v nvim >/dev/null && options="  Neovim"
+  command -v code >/dev/null && options="${options:+$options\n}  VSCode"
+  command -v cursor >/dev/null && options="${options:+$options\n}  Cursor"
+  command -v zed >/dev/null && options="${options:+$options\n}  Zed"
+  command -v sublime_text >/dev/null && options="${options:+$options\n}  Sublime Text"
+  command -v helix >/dev/null && options="${options:+$options\n}  Helix"
+  command -v vim >/dev/null && options="${options:+$options\n}  Vim"
+  command -v emacs >/dev/null && options="${options:+$options\n}  Emacs"
 
   local current=""
-  case "$(omarchy-default-editor)" in
+  case "$(default_editor)" in
     nvim) current="  Neovim" ;;
     code) current="  VSCode" ;;
     cursor) current="  Cursor" ;;
@@ -146,51 +139,69 @@ show_setup_default_editor_menu() {
   esac
 
   case $(menu "Default Editor" "$options" "" "$current") in
-    *Neovim*) omarchy-default-editor nvim ;;
-    *VSCode*) omarchy-default-editor code ;;
-    *Cursor*) omarchy-default-editor cursor ;;
-    *Zed*) omarchy-default-editor zed ;;
-    *Sublime*) omarchy-default-editor sublime_text ;;
-    *Helix*) omarchy-default-editor helix ;;
-    *Vim*) omarchy-default-editor vim ;;
-    *Emacs*) omarchy-default-editor emacs ;;
+    *Neovim*) default_editor nvim ;;
+    *VSCode*) default_editor code ;;
+    *Cursor*) default_editor cursor ;;
+    *Zed*) default_editor zed ;;
+    *Sublime*) default_editor sublime_text ;;
+    *Helix*) default_editor helix ;;
+    *Vim*) default_editor vim ;;
+    *Emacs*) default_editor emacs ;;
     *) back_to show_setup_default_menu ;;
   esac
 }
 
 show_setup_config_menu() {
-  case $(menu "Setup" "  Hyprland\n  Hypridle\n  Hyprlock\n  Hyprsunset\n  Swayosd\n󰌧  Walker\n󰍜  Waybar\n󰞅  XCompose") in
-    *Hyprland*) open_in_editor ~/.config/hypr/hyprland.conf ;;
-    *Hypridle*) open_in_editor ~/.config/hypr/hypridle.conf && omarchy-restart-hypridle ;;
-    *Hyprlock*) open_in_editor ~/.config/hypr/hyprlock.conf ;;
-    *Hyprsunset*) open_in_editor ~/.config/hypr/hyprsunset.conf && omarchy-restart-hyprsunset ;;
-    *Swayosd*) open_in_editor ~/.config/swayosd/config.toml && omarchy-restart-swayosd ;;
-    *Walker*) open_in_editor ~/.config/walker/config.toml && omarchy-restart-walker ;;
-    *Waybar*) open_in_editor ~/.config/waybar/config.jsonc && omarchy-restart-waybar ;;
-    *XCompose*) open_in_editor ~/.XCompose && omarchy-restart-xcompose ;;
-    *) back_to show_setup_menu ;;
+  local wm
+  wm=$(detect_wm)
+  case "$wm" in
+    hyprland)
+      case $(menu "Setup" "  Hyprland\n  Hypridle\n  Hyprlock\n  Hyprsunset\n  Swayosd\n󰌧  Walker\n󰍜  Waybar\n󰞅  XCompose") in
+        *Hyprland*) open_in_editor "$(wm_config_dir)/hyprland.conf" ;;
+        *Hypridle*) open_in_editor "$(wm_config_dir)/hypridle.conf" && restart_hypridle ;;
+        *Hyprlock*) open_in_editor "$(wm_config_dir)/hyprlock.conf" ;;
+        *Hyprsunset*) open_in_editor "$(wm_config_dir)/hyprsunset.conf" && restart_hyprsunset ;;
+        *Swayosd*) open_in_editor ~/.config/swayosd/config.toml && restart_swayosd ;;
+        *Walker*) open_in_editor ~/.config/walker/config.toml && restart_walker ;;
+        *Waybar*) open_in_editor ~/.config/waybar/config.jsonc && restart_waybar ;;
+        *XCompose*) open_in_editor ~/.XCompose ;;
+        *) back_to show_setup_menu ;;
+      esac
+      ;;
+    sway)
+      case $(menu "Setup" " Swayosd\n󰌧  Walker\n󰍜  Waybar") in
+        *Swayosd*) open_in_editor ~/.config/swayosd/config.toml && restart_swayosd ;;
+        *Walker*) open_in_editor ~/.config/walker/config.toml && restart_walker ;;
+        *Waybar*) open_in_editor ~/.config/waybar/config.jsonc && restart_waybar ;;
+        *) back_to show_setup_menu ;;
+      esac
+      ;;
+    *)
+      notify-send "Config" "No recognized window manager detected"
+      back_to show_setup_menu
+      ;;
   esac
 }
 
 show_setup_system_menu() {
   local options=""
 
-  if omarchy-toggle-enabled suspend-off; then
-    options="$options󰒲  Enable Suspend"
+  if toggle_enabled suspend-off; then
+    options="󰒲  Enable Suspend"
   else
-    options="$options󰒲  Disable Suspend"
+    options="󰒲  Disable Suspend"
   fi
 
-  if omarchy-hibernation-available; then
+  if hibernation_available; then
     options="$options\n󰤁  Disable Hibernate"
   else
     options="$options\n󰤁  Enable Hibernate"
   fi
 
   case $(menu "System" "$options") in
-    *Suspend*) omarchy-toggle-suspend ;;
-    *"Enable Hibernate"*) present_terminal omarchy-hibernation-setup ;;
-    *"Disable Hibernate"*) present_terminal omarchy-hibernation-remove ;;
+    *Suspend*) toggle_suspend ;;
+    *"Enable Hibernate"*) present_terminal hibernation_setup ;;
+    *"Disable Hibernate"*) present_terminal hibernation_remove ;;
     *) back_to show_setup_menu ;;
   esac
 }

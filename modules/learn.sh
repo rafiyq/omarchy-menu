@@ -1,14 +1,14 @@
 #!/bin/bash
-# Learning resources menu functions
+# Documentation resources menu functions
 
-show_learn_menu() {
-  case $(menu "Learn" "  Keybindings\n  Omarchy\n  Hyprland\n󰣇  Arch\n  Neovim\n󱆃  Bash") in
-    *Keybindings*) omarchy-menu-keybindings ;;
-    *Omarchy*) omarchy-launch-webapp "https://learn.omacom.io/2/the-omarchy-manual" ;;
-    *Hyprland*) omarchy-launch-webapp "https://wiki.hypr.land/" ;;
-    *Arch*) omarchy-launch-webapp "https://wiki.archlinux.org/title/Main_page" ;;
-    *Bash*) omarchy-launch-webapp "https://devhints.io/bash" ;;
-    *Neovim*) omarchy-launch-webapp "https://www.lazyvim.org/keymaps" ;;
+show_documentation_menu() {
+  case $(menu "Documentation" "  Keybindings\n  Hyprland\n󰣇  Arch\n  Neovim\n󱆃  Bash\n󰞋  Documentation") in
+    *Keybindings*) menu_keybindings ;;
+    *Hyprland*) launch_webapp "https://wiki.hypr.land/" ;;
+    *Arch*) launch_webapp "https://wiki.archlinux.org/" ;;
+    *Neovim*) launch_webapp "https://www.lazyvim.org/keymaps" ;;
+    *Bash*) launch_webapp "https://devhints.io/bash" ;;
+    *Documentation*) launch_webapp "https://learn.omacom.io/2/the-omarchy-manual" ;;
     *) back_to show_main_menu ;;
   esac
 }

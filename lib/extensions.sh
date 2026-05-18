@@ -1,10 +1,9 @@
 #!/bin/bash
 # User extension loading functionality
 
-# Load user extensions if they exist
-# This file should be sourced AFTER all module files so user overrides take effect
 load_user_extensions() {
-  local extensions_dir="$HOME/.config/omarchy/extensions"
+  local extensions_dir
+  extensions_dir="$(wmenu_config_dir)/extensions"
   local menu_extension="$extensions_dir/menu.sh"
 
   [[ -d "$extensions_dir" ]] || mkdir -p "$extensions_dir"

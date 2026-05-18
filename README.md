@@ -2,7 +2,7 @@
 
 A hierarchical menu system for [Omarchy](https://learn.omacom.io/2/the-omarchy-manual) — an Arch Linux desktop environment built on Hyprland. Provides a modular, extensible menu for launching apps, configuring the system, installing software, and more.
 
-Uses [walker](https://github.com/abceric/walker) or [rofi](https://github.com/davatorium/rofi) as the menu backend.
+Uses [walker](https://github.com/abceric/walker), [rofi](https://github.com/davatorium/rofi), or a built-in pure-bash TUI as the menu backend. Falls back to TUI automatically when no GUI menu is available, making it usable in TTY, over SSH, or on minimal systems.
 
 ## Project Structure
 
@@ -12,8 +12,9 @@ omarchy-menu/
 ├── Makefile             # lint, test, fmt, check targets
 ├── lib/
 │   ├── core.sh          # Core utility functions (terminal, install, editor)
-│   ├── menu.sh          # Menu display abstraction (walker/rofi backends)
+│   ├── menu.sh          # Menu display abstraction (walker/rofi/tui backends)
 │   ├── navigation.sh    # Menu routing and back navigation logic
+│   ├── tui.sh           # Pure bash TUI menu (no external dependencies)
 │   └── extensions.sh    # User extension loading
 └── modules/
     ├── apps.sh          # Application launching
@@ -38,6 +39,9 @@ omarchy-menu
 omarchy-menu apps
 omarchy-menu style
 omarchy-menu install
+
+# Force standalone mode (no Omarchy dependencies required)
+omarchy-menu --standalone
 ```
 
 ## Configuration
@@ -48,11 +52,18 @@ Set the menu backend via environment variable or config file:
 
 ```bash
 # Environment variable
-export OMARCHY_MENU_BACKEND=rofi
+export OMARCHY_MENU_BACKEND=rofi   # or walker, tui
 
 # Or config file at ~/.config/omarchy/menu.conf
 MENU_BACKEND=walker
 ```
+
+Available backends:
+- `walker` — GUI menu launcher (preferred if available)
+- `rofi` — GUI menu launcher (fallback)
+- `tui` — Pure bash terminal UI with arrow keys (no dependencies)
+
+If no backend is configured, the menu auto-detects: walker → rofi → tui.
 
 ### User Extensions
 

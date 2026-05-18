@@ -4,9 +4,14 @@
 setup() {
   export HOME="/tmp/omarchy-test-home"
   mkdir -p "$HOME"
+  source "$(dirname "$BATS_TEST_DIRNAME")/lib/platform.sh"
+  source "$(dirname "$BATS_TEST_DIRNAME")/lib/pkg.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/core.sh"
+  source "$(dirname "$BATS_TEST_DIRNAME")/lib/tui.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/menu.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/navigation.sh"
+  source "$(dirname "$BATS_TEST_DIRNAME")/lib/wm.sh"
+  source "$(dirname "$BATS_TEST_DIRNAME")/lib/services.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/modules/apps.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/modules/learn.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/modules/trigger.sh"
@@ -38,7 +43,7 @@ teardown() {
 
 @test "go_to_menu routes apps to show_apps_menu" {
   mock_path="$(mktemp -d)"
-  cat > "$mock_path/walker" <<'MOCK'
+  cat >"$mock_path/walker" <<'MOCK'
 #!/bin/bash
 echo "apps menu launched"
 MOCK
@@ -50,58 +55,36 @@ MOCK
 
 @test "go_to_menu routes style to show_style_menu" {
   mock_path="$(mktemp -d)"
-  cat > "$mock_path/walker" <<'MOCK'
+  cat >"$mock_path/walker" <<'MOCK'
 #!/bin/bash
-echo "󰸌 Theme"
+echo "About"
 MOCK
-  cat > "$mock_path/omarchy-launch-walker" <<'MOCK'
-#!/bin/bash
-echo "theme walker launched"
-MOCK
-  chmod +x "$mock_path/walker" "$mock_path/omarchy-launch-walker"
+  launch_about() { echo "about launched"; }
+  chmod +x "$mock_path/walker"
   PATH="$mock_path:$PATH" run go_to_menu "Style"
-  [[ "$output" == *"theme walker launched"* ]]
-  rm -rf "$mock_path"
-}
-
-@test "go_to_menu routes about to show_about" {
-  mock_path="$(mktemp -d)"
-  cat > "$mock_path/walker" <<'MOCK'
-#!/bin/bash
-echo "󰋶 Omarchy"
-MOCK
-  cat > "$mock_path/omarchy-launch-about" <<'MOCK'
-#!/bin/bash
-echo "about launched"
-MOCK
-  chmod +x "$mock_path/walker" "$mock_path/omarchy-launch-about"
-  PATH="$mock_path:$PATH" run go_to_menu "About"
   [[ "$output" == *"about launched"* ]]
   rm -rf "$mock_path"
 }
 
+@test "go_to_menu routes about to show_about" {
+  launch_about() { echo "about launched"; }
+  run go_to_menu "About"
+  [[ "$output" == *"about launched"* ]]
+}
+
 @test "go_to_menu routes system to show_system_menu" {
   mock_path="$(mktemp -d)"
-  cat > "$mock_path/walker" <<'MOCK'
+  cat >"$mock_path/walker" <<'MOCK'
 #!/bin/bash
-echo "󱄄 Screensaver"
+echo "Lock"
 MOCK
-  cat > "$mock_path/omarchy-launch-screensaver" <<'MOCK'
-#!/bin/bash
-echo "screensaver launched"
-MOCK
-  cat > "$mock_path/omarchy-toggle-enabled" <<'MOCK'
-#!/bin/bash
-echo "toggle"
-MOCK
-  cat > "$mock_path/omarchy-hibernation-available" <<'MOCK'
-#!/bin/bash
-false
-MOCK
-  chmod +x "$mock_path/walker" "$mock_path/omarchy-launch-screensaver" \
-    "$mock_path/omarchy-toggle-enabled" "$mock_path/omarchy-hibernation-available"
+  chmod +x "$mock_path/walker"
+  toggle_enabled() { false; }
+  hibernation_available() { false; }
+  wm_lock() { echo "wm lock"; }
+  system_suspend() { echo "system suspend"; }
   PATH="$mock_path:$PATH" run go_to_menu "System"
-  [[ "$output" == *"screensaver launched"* ]]
+  [[ "$output" == *"wm lock"* ]]
   rm -rf "$mock_path"
 }
 
