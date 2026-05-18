@@ -1,31 +1,37 @@
-# Omarchy Menu
+# WMenu — Universal Desktop Menu
 
-A hierarchical menu system for [Omarchy](https://learn.omacom.io/2/the-omarchy-manual) — an Arch Linux desktop environment built on Hyprland. Provides a modular, extensible menu for launching apps, configuring the system, installing software, and more.
+A distro-agnostic, WM-agnostic hierarchical menu system for Linux desktops. Supports Arch/Debian/Fedora and Hyprland/Sway. Provides a modular menu for launching apps, configuring the system, installing software, and more.
 
 Uses [walker](https://github.com/abceric/walker), [rofi](https://github.com/davatorium/rofi), or a built-in pure-bash TUI as the menu backend. Falls back to TUI automatically when no GUI menu is available, making it usable in TTY, over SSH, or on minimal systems.
 
 ## Project Structure
 
 ```
-omarchy-menu/
+wmenu/
 ├── main.sh              # Entry point — sources libs and modules, defines main menu
+├── bin/dispatch.sh      # CLI entry point for terminal-spawned commands
 ├── Makefile             # lint, test, fmt, check targets
 ├── lib/
 │   ├── core.sh          # Core utility functions (terminal, install, editor)
 │   ├── menu.sh          # Menu display abstraction (walker/rofi/tui backends)
 │   ├── navigation.sh    # Menu routing and back navigation logic
 │   ├── tui.sh           # Pure bash TUI menu (no external dependencies)
-│   └── extensions.sh    # User extension loading
+│   ├── extensions.sh    # User extension loading
+│   ├── platform.sh      # Distro/WM/hardware detection
+│   ├── pkg.sh           # Package manager abstraction (pacman/apt/dnf)
+│   ├── wm.sh            # Window manager operations (Hyprland/Sway)
+│   ├── capture.sh       # Screenshot, recording, color pick
+│   └── services.sh      # System services (power, audio, bluetooth, fonts, toggles)
 └── modules/
     ├── apps.sh          # Application launching
     ├── learn.sh         # Learning resources (keybindings, wikis)
     ├── trigger.sh       # Quick actions (reminders, capture, toggles)
-    ├── style.sh         # Theming, fonts, backgrounds
+    ├── style.sh         # Font configuration
     ├── setup.sh         # System setup (audio, wifi, defaults, config)
     ├── install.sh       # Software installation menus
     ├── remove.sh        # Software removal menus
     ├── update.sh        # System updates, process restarts
-    ├── about.sh         # About Omarchy information
+    ├── about.sh         # System information (fastfetch)
     └── system.sh        # Power controls (lock, suspend, shutdown)
 ```
 
@@ -33,29 +39,26 @@ omarchy-menu/
 
 ```bash
 # Launch the main menu
-omarchy-menu
+./main.sh
 
 # Jump directly to a submenu
-omarchy-menu apps
-omarchy-menu style
-omarchy-menu install
-
-# Force standalone mode (no Omarchy dependencies required)
-omarchy-menu --standalone
+./main.sh apps
+./main.sh style
+./main.sh install
 ```
 
 ## Configuration
 
 ### Menu Backend
 
-Set the menu backend via environment variable or config file:
+Set the menu backend via environment variable:
 
 ```bash
-# Environment variable
-export OMARCHY_MENU_BACKEND=rofi   # or walker, tui
+# New variable (preferred)
+export WMENU_MENU_BACKEND=rofi   # or walker, tui
 
-# Or config file at ~/.config/omarchy/menu.conf
-MENU_BACKEND=walker
+# Legacy variable (fallback)
+export OMARCHY_MENU_BACKEND=rofi
 ```
 
 Available backends:
@@ -67,14 +70,14 @@ If no backend is configured, the menu auto-detects: walker → rofi → tui.
 
 ### User Extensions
 
-Place custom overrides in `~/.config/omarchy/extensions/menu.sh`. This file is sourced after all modules, so you can override any menu function:
+Place custom overrides in `~/.config/wmenu/extensions/menu.sh`. This file is sourced after all modules, so you can override any menu function:
 
 ```bash
 # Example: override the install menu
 show_install_menu() {
   case $(menu "Install" "My Custom Option\n󰣇 Package") in
   *Custom*) my-custom-installer ;;
-  *Package*) terminal omarchy-pkg-install ;;
+  *Package*) terminal pkg_install something ;;
   *) back_to show_main_menu ;;
   esac
 }
