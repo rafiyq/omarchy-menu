@@ -2,24 +2,22 @@
 # Tests for lib/menu.sh
 
 setup() {
-  export HOME="/tmp/omarchy-test-home"
+  export HOME="/tmp/wmenu-test-home"
   mkdir -p "$HOME"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/tui.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/menu.sh"
 }
 
 teardown() {
-  rm -rf "/tmp/omarchy-test-home"
+  rm -rf "/tmp/wmenu-test-home"
 }
 
 @test "get_menu_backend defaults to tui when no GUI backend available" {
-  unset OMARCHY_MENU_BACKEND
   PATH="/usr/nonexistent" run get_menu_backend
   [ "$output" = "tui" ]
 }
 
 @test "get_menu_backend prefers walker when available" {
-  unset OMARCHY_MENU_BACKEND
   mock_path="$(mktemp -d)"
   touch "$mock_path/walker"
   chmod +x "$mock_path/walker"
@@ -29,7 +27,6 @@ teardown() {
 }
 
 @test "get_menu_backend falls back to rofi when walker unavailable" {
-  unset OMARCHY_MENU_BACKEND
   mock_path="$(mktemp -d)"
   touch "$mock_path/rofi"
   chmod +x "$mock_path/rofi"
@@ -38,27 +35,9 @@ teardown() {
   rm -rf "$mock_path"
 }
 
-@test "get_menu_backend respects OMARCHY_MENU_BACKEND env var" {
-  OMARCHY_MENU_BACKEND=rofi run get_menu_backend
-  [ "$output" = "rofi" ]
-}
-
 @test "get_menu_backend respects MENU_BACKEND env var" {
   MENU_BACKEND=rofi run get_menu_backend
   [ "$output" = "rofi" ]
-}
-
-@test "get_menu_backend respects OMARCHY_MENU_BACKEND as fallback" {
-  unset MENU_BACKEND
-  OMARCHY_MENU_BACKEND=rofi run get_menu_backend
-  [ "$output" = "rofi" ]
-}
-
-@test "get_menu_backend MENU_BACKEND overrides OMARCHY_MENU_BACKEND" {
-  MENU_BACKEND=tui
-  OMARCHY_MENU_BACKEND=rofi
-  run get_menu_backend
-  [ "$output" = "tui" ]
 }
 
 @test "command_available returns true for existing commands" {
@@ -85,20 +64,20 @@ MOCK
 }
 
 @test "show_menu returns error for unknown backend" {
-  OMARCHY_MENU_BACKEND=unknown_backend run show_menu "Test" "Options"
+  MENU_BACKEND=unknown_backend run show_menu "Test" "Options"
   [ "$status" -eq 1 ]
   [[ "$output" == *"unknown menu backend"* ]]
 }
 
 @test "show_menu returns error when rofi not available and backend is rofi" {
-  OMARCHY_MENU_BACKEND=rofi PATH="/usr/nonexistent" run show_menu "Test" "Options"
+  MENU_BACKEND=rofi PATH="/usr/nonexistent" run show_menu "Test" "Options"
   [ "$status" -eq 1 ]
   [[ "$output" == *"rofi is not available"* ]]
 }
 
 @test "show_menu routes to tui_menu for tui backend" {
   # Verify the case statement routes correctly by checking function resolution
-  OMARCHY_MENU_BACKEND=tui run bash -c '
+  MENU_BACKEND=tui run bash -c '
     source "'"$(dirname "$BATS_TEST_DIRNAME")/lib/tui.sh"'"
     source "'"$(dirname "$BATS_TEST_DIRNAME")/lib/menu.sh"'"
     # Override tui_menu to capture that it was called

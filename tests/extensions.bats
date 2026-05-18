@@ -2,7 +2,7 @@
 # Tests for lib/extensions.sh
 
 setup() {
-  export HOME="/tmp/omarchy-test-home"
+  export HOME="/tmp/wmenu-test-home"
   export XDG_CONFIG_HOME="$HOME/.config"
   mkdir -p "$HOME/.config/wmenu/extensions"
 
@@ -11,7 +11,7 @@ setup() {
 }
 
 teardown() {
-  rm -rf "/tmp/omarchy-test-home"
+  rm -rf "/tmp/wmenu-test-home"
 }
 
 @test "load_user_extensions creates extensions directory" {

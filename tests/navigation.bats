@@ -2,7 +2,7 @@
 # Tests for lib/navigation.sh
 
 setup() {
-  export HOME="/tmp/omarchy-test-home"
+  export HOME="/tmp/wmenu-test-home"
   mkdir -p "$HOME"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/platform.sh"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/pkg.sh"
@@ -26,7 +26,7 @@ setup() {
 }
 
 teardown() {
-  rm -rf "/tmp/omarchy-test-home"
+  rm -rf "/tmp/wmenu-test-home"
 }
 
 @test "back_to exits when BACK_TO_EXIT is true" {

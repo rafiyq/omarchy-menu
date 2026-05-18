@@ -2,13 +2,13 @@
 # Tests for lib/tui.sh
 
 setup() {
-  export HOME="/tmp/omarchy-test-home"
+  export HOME="/tmp/wmenu-test-home"
   mkdir -p "$HOME"
   source "$(dirname "$BATS_TEST_DIRNAME")/lib/tui.sh"
 }
 
 teardown() {
-  rm -rf "/tmp/omarchy-test-home"
+  rm -rf "/tmp/wmenu-test-home"
 }
 
 @test "_tui_term_height returns default when not a terminal" {

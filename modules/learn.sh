@@ -8,7 +8,6 @@ show_documentation_menu() {
     *Arch*) launch_webapp "https://wiki.archlinux.org/" ;;
     *Neovim*) launch_webapp "https://www.lazyvim.org/keymaps" ;;
     *Bash*) launch_webapp "https://devhints.io/bash" ;;
-    *Documentation*) launch_webapp "https://learn.omacom.io/2/the-omarchy-manual" ;;
     *) back_to show_main_menu ;;
   esac
 }

@@ -2,7 +2,7 @@
 # Tests for lib/core.sh
 
 setup() {
-  export HOME="/tmp/omarchy-test-home"
+  export HOME="/tmp/wmenu-test-home"
   export XDG_CONFIG_HOME="$HOME/.config"
   export XDG_DATA_HOME="$HOME/.local/share"
   mkdir -p "$HOME"
@@ -23,7 +23,7 @@ setup() {
 }
 
 teardown() {
-  rm -rf "/tmp/omarchy-test-home"
+  rm -rf "/tmp/wmenu-test-home"
 }
 
 @test "terminal passes arguments through" {

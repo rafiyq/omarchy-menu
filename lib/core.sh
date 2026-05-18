@@ -18,7 +18,7 @@ terminal() {
   if [[ -n "$term" ]]; then
     "$term" "$@" &
   elif command -v xdg-terminal-exec >/dev/null 2>&1; then
-    xdg-terminal-exec --app-id=org.omarchy.terminal "$@"
+    xdg-terminal-exec "$@"
   else
     echo "Error: no terminal emulator found" >&2
     return 1
