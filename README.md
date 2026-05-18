@@ -55,7 +55,7 @@ Set the menu backend via environment variable:
 
 ```bash
 # New variable (preferred)
-export WMENU_MENU_BACKEND=rofi   # or walker, tui
+export MENU_BACKEND=rofi   # or walker, tui
 
 # Legacy variable (fallback)
 export OMARCHY_MENU_BACKEND=rofi

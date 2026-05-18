@@ -4,8 +4,8 @@
 # Get menu backend configuration
 get_menu_backend() {
   # Check environment variable (new name first, then fallback to old)
-  if [[ -n "${WMENU_MENU_BACKEND:-}" ]]; then
-    echo "$WMENU_MENU_BACKEND"
+  if [[ -n "${MENU_BACKEND:-}" ]]; then
+    echo "$MENU_BACKEND"
     return
   fi
   if [[ -n "${OMARCHY_MENU_BACKEND:-}" ]]; then

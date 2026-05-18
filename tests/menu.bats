@@ -43,19 +43,19 @@ teardown() {
   [ "$output" = "rofi" ]
 }
 
-@test "get_menu_backend respects WMENU_MENU_BACKEND env var" {
-  WMENU_MENU_BACKEND=rofi run get_menu_backend
+@test "get_menu_backend respects MENU_BACKEND env var" {
+  MENU_BACKEND=rofi run get_menu_backend
   [ "$output" = "rofi" ]
 }
 
 @test "get_menu_backend respects OMARCHY_MENU_BACKEND as fallback" {
-  unset WMENU_MENU_BACKEND
+  unset MENU_BACKEND
   OMARCHY_MENU_BACKEND=rofi run get_menu_backend
   [ "$output" = "rofi" ]
 }
 
-@test "get_menu_backend WMENU_MENU_BACKEND takes precedence over OMARCHY_MENU_BACKEND" {
-  WMENU_MENU_BACKEND=tui
+@test "get_menu_backend MENU_BACKEND overrides OMARCHY_MENU_BACKEND" {
+  MENU_BACKEND=tui
   OMARCHY_MENU_BACKEND=rofi
   run get_menu_backend
   [ "$output" = "tui" ]
