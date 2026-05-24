@@ -863,6 +863,259 @@ function M.open_in_editor(path)
 end
 
 -- =============================================================================
+-- WM FUNCTIONS (ported from wm.sh)
+-- =============================================================================
+
+function M.wm_config_dir()
+    local wm = M.detect_wm()
+    if wm == "hyprland" then
+        return os.getenv("HOME") .. "/.config/hypr"
+    elseif wm == "sway" then
+        return os.getenv("HOME") .. "/.config/sway"
+    else
+        return os.getenv("HOME") .. "/.config"
+    end
+end
+
+function M.wm_lock()
+    local wm = M.detect_wm()
+    if wm == "hyprland" and M.cmd_exists("hyprlock") then
+        os.execute("hyprlock &")
+    elseif wm == "sway" and M.cmd_exists("swaylock") then
+        os.execute("swaylock &")
+    else
+        M.exec_silent("loginctl lock-session")
+    end
+end
+
+function M.wm_logout()
+    local wm = M.detect_wm()
+    if wm == "hyprland" then
+        M.exec_silent("hyprctl dispatch exit")
+    elseif wm == "sway" then
+        M.exec_silent("swaymsg exit")
+    else
+        M.exec_silent("loginctl terminate-session")
+    end
+end
+
+function M.wm_gaps_toggle()
+    local wm = M.detect_wm()
+    if wm == "hyprland" then
+        local current = M.exec("hyprctl getoption general:gaps_in -j 2>/dev/null | jq -r '.int // 5' 2>/dev/null || echo '5'")
+        current = tonumber(current) or 5
+        if current > 0 then
+            M.exec_silent("hyprctl keyword general:gaps_in 0")
+            M.exec_silent("hyprctl keyword general:gaps_out 0")
+            M.notify("Gaps", "No gaps")
+        else
+            M.exec_silent("hyprctl keyword general:gaps_in 5")
+            M.exec_silent("hyprctl keyword general:gaps_out 8")
+            M.notify("Gaps", "Default gaps")
+        end
+    elseif wm == "sway" then
+        M.exec_silent("swaymsg gaps inner current 0")
+        M.notify("Gaps", "Toggled")
+    else
+        M.notify("Gaps", "Not supported on this WM", "critical")
+    end
+end
+
+function M.wm_floating_toggle()
+    local wm = M.detect_wm()
+    if wm == "hyprland" then
+        M.exec_silent("hyprctl dispatch togglefloating")
+        M.notify("Window", "Toggled floating")
+    elseif wm == "sway" then
+        M.exec_silent("swaymsg floating toggle")
+        M.notify("Window", "Toggled floating")
+    else
+        M.notify("Floating", "Not supported on this WM", "critical")
+    end
+end
+
+function M.wm_bar_toggle()
+    if M.is_process_running("waybar") then
+        M.kill_process("waybar")
+        M.notify("Bar", "Hidden")
+    else
+        os.execute("waybar &")
+        M.notify("Bar", "Shown")
+    end
+end
+
+function M.wm_restart()
+    local wm = M.detect_wm()
+    if wm == "hyprland" then
+        M.exec_silent("hyprctl reload")
+    elseif wm == "sway" then
+        M.exec_silent("swaymsg reload")
+    else
+        M.notify("Restart", "Not supported on this WM", "critical")
+    end
+end
+
+-- =============================================================================
+-- CAPTURE FUNCTIONS (ported from capture.sh)
+-- =============================================================================
+
+function M.capture_screenshot()
+    local timestamp = os.date("%Y%m%d_%H%M%S")
+    local dir = os.getenv("XDG_PICTURES_DIR") or (os.getenv("HOME") .. "/Pictures")
+    M.ensure_dir(dir)
+    local target = dir .. "/screenshot_" .. timestamp .. ".png"
+
+    if M.cmd_exists("grim") then
+        if M.cmd_exists("slurp") then
+            M.exec_silent("grim -g \"$(slurp)\" '" .. target .. "'")
+        else
+            M.exec_silent("grim '" .. target .. "'")
+        end
+        if M.cmd_exists("wl-copy") then
+            M.exec_silent("wl-copy < '" .. target .. "'")
+        end
+        M.notify("Screenshot", "Saved and copied to clipboard")
+    else
+        M.notify("Screenshot", "grim is not installed", "critical")
+    end
+end
+
+function M.capture_text_extraction()
+    if not M.cmd_exists("grim") or not M.cmd_exists("tesseract") then
+        M.notify("Text Extraction", "grim and tesseract are required", "critical")
+        return
+    end
+    local text = M.exec("grim -g $(slurp) - | tesseract -l eng - - 2>/dev/null")
+    if text and text ~= "" then
+        M.write_file("/tmp/wmenu-ocr.txt", text)
+        M.exec_silent("wl-copy < /tmp/wmenu-ocr.txt")
+        M.notify("Text Extraction", "Copied to clipboard")
+    else
+        M.notify("Text Extraction", "No text detected", "critical")
+    end
+end
+
+function M.capture_screenrecording(...)
+    if not M.cmd_exists("wf-recorder") then
+        M.notify("Screen Recording", "wf-recorder is not installed", "critical")
+        return
+    end
+    local dir = os.getenv("XDG_VIDEOS_DIR") or (os.getenv("HOME") .. "/Videos")
+    M.ensure_dir(dir)
+    local output = dir .. "/recording_" .. os.date("%Y%m%d_%H%M%S") .. ".mp4"
+    local audio_args = {}
+    for _, arg in ipairs({...}) do
+        if arg == "--with-desktop-audio" then
+            table.insert(audio_args, "-a")
+        elseif arg == "--with-microphone-audio" then
+            table.insert(audio_args, "-a $(pactl get-default-source)")
+        end
+    end
+    os.execute("wf-recorder " .. table.concat(audio_args, " ") .. " -f '" .. output .. "' &")
+    M.notify("Screen Recording", "Recording started: " .. output)
+end
+
+function M.capture_colorpick()
+    if M.cmd_exists("hyprpicker") then
+        os.execute("hyprpicker -a")
+    else
+        M.notify("Color Picker", "hyprpicker is not installed", "critical")
+    end
+end
+
+function M.get_webcam_list()
+    if not M.cmd_exists("v4l2-ctl") then
+        return {}
+    end
+    local handle = io.popen("v4l2-ctl --list-devices 2>/dev/null")
+    if not handle then
+        return {}
+    end
+    local lines = {}
+    for line in handle:lines() do
+        table.insert(lines, line)
+    end
+    handle:close()
+    return lines
+end
+
+-- =============================================================================
+-- SERVICE RESTARTS (ported from services.sh)
+-- =============================================================================
+
+function M.restart_hypridle()
+    M.exec_silent("systemctl --user restart hypridle 2>/dev/null || killall -HUP hypridle 2>/dev/null")
+end
+
+function M.restart_hyprsunset()
+    M.exec_silent("systemctl --user restart hyprsunset 2>/dev/null || killall -HUP hyprsunset 2>/dev/null")
+end
+
+function M.restart_mako()
+    M.exec_silent("systemctl --user restart mako 2>/dev/null || { killall mako 2>/dev/null; mako & }")
+end
+
+function M.restart_swayosd()
+    M.exec_silent("systemctl --user restart swayosd 2>/dev/null || { killall swayosd 2>/dev/null; swayosd & }")
+end
+
+function M.restart_pipewire()
+    M.exec_silent("systemctl --user restart pipewire pipewire-pulse wireplumber 2>/dev/null")
+end
+
+function M.restart_wifi()
+    M.exec_silent("sudo systemctl restart NetworkManager 2>/dev/null")
+end
+
+function M.restart_bluetooth()
+    M.exec_silent("sudo systemctl restart bluetooth 2>/dev/null")
+end
+
+-- =============================================================================
+-- FONT MANAGEMENT (ported from services.sh)
+-- =============================================================================
+
+function M.font_list()
+    local handle = io.popen("fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u | head -50")
+    if not handle then
+        return {}
+    end
+    local fonts = {}
+    for line in handle:lines() do
+        table.insert(fonts, line)
+    end
+    handle:close()
+    return fonts
+end
+
+function M.font_current()
+    local conf = M.wm_config_dir() .. "/looknfeel.conf"
+    local f = io.open(conf, "r")
+    if not f then
+        return nil
+    end
+    local content = f:read("*a")
+    f:close()
+    return content:match("font%.name=(.-)") or nil
+end
+
+function M.font_set(name)
+    local conf = M.wm_config_dir() .. "/looknfeel.conf"
+    local f = io.open(conf, "r")
+    if not f then
+        M.notify("Font", "No looknfeel.conf found", "critical")
+        return false
+    end
+    local content = f:read("*a")
+    f:close()
+    content = content:gsub("font%.name=[^
+]+", "font.name=" .. name)
+    M.write_file(conf, content)
+    M.notify("Font", "Set to " .. name)
+    return true
+end
+
+-- =============================================================================
 -- RETURN MODULE
 -- =============================================================================
 
