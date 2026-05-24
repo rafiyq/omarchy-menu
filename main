@@ -1,25 +1,12 @@
 #!/bin/bash
 # Main entry point for wmenu (omarchy-menu)
-# Detects walker and display; falls back to lib/tui.sh if unavailable.
+# Launches walker --provider menus:top-level when walker and display are available.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
 
-# Source remaining library files (for bash TUI fallback)
-source "$SCRIPT_DIR/lib/platform.sh"
-source "$SCRIPT_DIR/lib/pkg.sh"
-source "$SCRIPT_DIR/lib/wm.sh"
-source "$SCRIPT_DIR/lib/capture.sh"
-source "$SCRIPT_DIR/lib/services.sh"
-source "$SCRIPT_DIR/lib/core.sh"
-source "$SCRIPT_DIR/lib/tui.sh"
-source "$SCRIPT_DIR/lib/menu.sh"
-source "$SCRIPT_DIR/lib/extensions.sh"
-
 # Determine whether we have a GUI environment and walker
-toggle_existing_menu
-
 has_walker() {
     command -v walker >/dev/null 2>&1
 }
@@ -33,6 +20,12 @@ if has_walker && has_display; then
     walker --provider menus:top-level "$@"
     exit 0
 fi
+
+# No walker or no display — show error and exit
+# (TUI fallback lives on the 'tui' branch)
+echo "Error: Walker is not available and display is missing." >&2
+echo "If you need TTY support, check out the 'tui' branch." >&2
+exit 1
 
 # Otherwise fall back to bash TUI (keeps existing behaviour)
 show_main_menu() {
