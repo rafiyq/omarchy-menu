@@ -1,0 +1,675 @@
+-- wmenu Shared Library for Elephant Providers
+-- Self-contained: no external omarchy-* dependencies
+
+local M = {}
+
+-- =============================================================================
+-- CONFIGURABLE PATHS (parameterized, defaults to omarchy paths)
+-- =============================================================================
+
+function M.config_dir()
+    local xdg = os.getenv("XDG_CONFIG_HOME")
+    if xdg then
+        return xdg .. "/omarchy"
+    end
+    return os.getenv("HOME") .. "/.config/omarchy"
+end
+
+function M.data_dir()
+    local xdg = os.getenv("XDG_DATA_HOME")
+    if xdg then
+        return xdg .. "/omarchy"
+    end
+    return os.getenv("HOME") .. "/.local/share/omarchy"
+end
+
+function M.state_dir()
+    local xdg = os.getenv("XDG_STATE_HOME")
+    if xdg then
+        return xdg .. "/omarchy"
+    end
+    return os.getenv("HOME") .. "/.local/state/omarchy"
+end
+
+M.OMARCHY_CONFIG = M.config_dir()
+M.STATE_DIR = M.state_dir()
+
+-- =============================================================================
+-- FILE / PATH UTILITIES
+-- =============================================================================
+
+function M.file_exists(path)
+    local f = io.open(path, "r")
+    if f then
+        f:close()
+        return true
+    end
+    return false
+end
+
+function M.read_file(path)
+    local f = io.open(path, "r")
+    if not f then
+        return nil
+    end
+    local content = f:read("*a")
+    f:close()
+    return content
+end
+
+function M.write_file(path, content)
+    local f, err = io.open(path, "w")
+    if not f then
+        return false, err
+    end
+    f:write(content)
+    f:close()
+    return true
+end
+
+function M.ensure_dir(path)
+    local handle = io.popen("mkdir -p '" .. path:gsub("'", "'\\''") .. "' 2>/dev/null")
+    if handle then
+        handle:close()
+    end
+    return M.file_exists(path)
+end
+
+-- =============================================================================
+-- COMMAND EXECUTION
+-- =============================================================================
+
+function M.cmd_exists(cmd)
+    local handle = io.popen("command -v " .. cmd .. " 2>/dev/null")
+    if not handle then
+        return false
+    end
+    local result = handle:read("*a")
+    handle:close()
+    return result ~= "" and result ~= nil
+end
+
+function M.exec(cmd)
+    local handle = io.popen(cmd .. " 2>&1; echo $?")
+    if not handle then
+        return nil, -1
+    end
+    local output = handle:read("*a")
+    handle:close()
+    local exit_code = tonumber(output:match("(%d+)\n$")) or -1
+    local trimmed = output:gsub("%d+\n$", "")
+    return trimmed, exit_code
+end
+
+function M.exec_silent(cmd)
+    os.execute(cmd .. " >/dev/null 2>&1")
+end
+
+-- =============================================================================
+-- NOTIFICATIONS
+-- =============================================================================
+
+function M.notify(title, text, urgency)
+    urgency = urgency or "normal"
+    if M.cmd_exists("notify-send") then
+        os.execute("notify-send -u " .. urgency .. " '" .. title .. "' '" .. text .. "' >/dev/null 2>&1")
+    end
+end
+
+function M.notify_icon(title, text, icon, urgency)
+    urgency = urgency or "normal"
+    if M.cmd_exists("notify-send") then
+        local icon_arg = icon and " -i '" .. icon .. "'" or "" 
+        os.execute("notify-send" .. icon_arg .. " -u " .. urgency .. " '" .. title .. "' '" .. text .. "' >/dev/null 2>&1")
+    end
+end
+
+-- =============================================================================
+-- STATE MANAGEMENT
+-- =============================================================================
+
+function M.init_state()
+    M.ensure_dir(M.STATE_DIR .. "/toggles")
+    return M.file_exists(M.STATE_DIR)
+end
+
+function M.is_enabled(toggle_name)
+    local path = M.STATE_DIR .. "/toggles/" .. toggle_name
+    return M.file_exists(path)
+end
+
+function M.enable(toggle_name, notify_text)
+    M.init_state()
+    local path = M.STATE_DIR .. "/toggles/" .. toggle_name
+    local success, err = M.write_file(path, "")
+    if success and notify_text then
+        M.notify("Enabled", notify_text)
+    end
+    return success
+end
+
+function M.disable(toggle_name, notify_text)
+    local path = M.STATE_DIR .. "/toggles/" .. toggle_name
+    if M.file_exists(path) then
+        os.execute("rm -f '" .. path:gsub("'", "'\\''") .. "'")
+    end
+    if notify_text then
+        M.notify("Disabled", notify_text)
+    end
+    return true
+end
+
+function M.toggle_state(toggle_name, enabled_text, disabled_text)
+    if M.is_enabled(toggle_name) then
+        M.disable(toggle_name, disabled_text)
+        return false
+    else
+        M.enable(toggle_name, enabled_text)
+        return true
+    end
+end
+
+-- =============================================================================
+-- HYPRLAND / WM INTEGRATION
+-- =============================================================================
+
+function M.hyprctl(cmd)
+    if M.cmd_exists("hyprctl") then
+        local handle = io.popen("hyprctl " .. cmd .. " 2>/dev/null")
+        if handle then
+            local result = handle:read("*a")
+            handle:close()
+            return result
+        end
+    end
+    return nil
+end
+
+function M.is_process_running(name)
+    local handle = io.popen("pgrep -x '" .. name .. "' >/dev/null 2>&1 && echo 'yes' || echo 'no'")
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+        return result:find("yes") ~= nil
+    end
+    return false
+end
+
+function M.kill_process(name, signal)
+    signal = signal or ""
+    if signal ~= "" then
+        signal = "-" .. signal .. " "
+    end
+    os.execute("pkill " .. signal .. "-x '" .. name .. "' >/dev/null 2>&1")
+end
+
+-- =============================================================================
+-- SYSTEM ACTIONS
+-- =============================================================================
+
+function M.lock_screen()
+    if M.cmd_exists("hyprlock") and not M.is_process_running("hyprlock") then
+        os.execute("(hyprlock; " ..
+            "hyprctl keyword cursor:invisible false >/dev/null 2>&1; " ..
+            "pkill -x tte >/dev/null 2>&1; " ..
+            "pkill -f org.omarchy.screensaver >/dev/null 2>&1) &")
+        M.exec_silent("hyprctl switchxkblayout all 0")
+        if M.is_process_running("1password") then
+            os.execute("1password --lock >/dev/null 2>&1 &")
+        end
+    else
+        M.exec_silent("loginctl lock-session")
+    end
+end
+
+function M.logout()
+    M.exec_silent("nohup bash -c 'sleep 2 && uwsm stop' >/dev/null 2>&1 &")
+    M.exec_silent("hyprctl dispatch closewindow regex:.* >/dev/null 2>&1")
+    os.execute("sleep 1")
+end
+
+function M.suspend()
+    M.notify("System", "Suspending...")
+    M.exec_silent("systemctl suspend")
+end
+
+function M.reboot()
+    M.notify("System", "Rebooting...")
+    M.exec_silent("nohup bash -c 'sleep 2 && systemctl reboot --no-wall' >/dev/null 2>&1 &")
+    M.exec_silent("hyprctl dispatch closewindow regex:.* >/dev/null 2>&1")
+    os.execute("sleep 1")
+end
+
+function M.shutdown()
+    M.notify("System", "Shutting down...")
+    M.exec_silent("nohup bash -c 'sleep 2 && systemctl poweroff --no-wall' >/dev/null 2>&1 &")
+    M.exec_silent("hyprctl dispatch closewindow regex:.* >/dev/null 2>&1")
+    os.execute("sleep 1")
+end
+
+-- =============================================================================
+-- HIBERNATION DETECTION
+-- =============================================================================
+
+function M.hibernation_supported()
+    local f = io.open("/sys/power/image_size", "r")
+    if not f then
+        return false
+    end
+    local image_size_str = f:read("*a")
+    f:close()
+    if not image_size_str then
+        return false
+    end
+    local trimmed = image_size_str:gsub("^%s*(.-)%s*$", "%1")
+    local image_size = tonumber(trimmed)
+    if not image_size or image_size == 0 then
+        return false
+    end
+    local swaptotal_kb = 0
+    local swap_handle = io.open("/proc/swaps", "r")
+    if swap_handle then
+        local first = true
+        for line in swap_handle:lines() do
+            if first then
+                first = false
+            else
+                if not line:find("zram") then
+                    local size_str = line:match("%S+%s+%S+%s+(%d+)")
+                    if size_str then
+                        swaptotal_kb = swaptotal_kb + tonumber(size_str)
+                    end
+                end
+            end
+        end
+        swap_handle:close()
+    end
+    return swaptotal_kb > 0
+end
+
+function M.hibernate()
+    if M.hibernation_supported() then
+        M.notify("System", "Hibernating...")
+        M.exec_silent("systemctl hibernate")
+    else
+        M.notify("Error", "Hibernation not supported", "critical")
+    end
+end
+
+-- =============================================================================
+-- SCREENSAVER
+-- =============================================================================
+
+function M.launch_screensaver()
+    M.exec_silent("pkill -x tte >/dev/null 2>&1")
+end
+
+function M.screensaver_enabled()
+    return not M.is_enabled("screensaver-off")
+end
+
+function M.toggle_screensaver()
+    M.toggle_state("screensaver-off", "Screensaver disabled", "Screensaver enabled")
+end
+
+-- =============================================================================
+-- NIGHTLIGHT
+-- =============================================================================
+
+function M.toggle_nightlight()
+    if M.cmd_exists("hyprsunset") then
+        if M.is_process_running("hyprsunset") then
+            local current = M.exec("hyprctl hyprsunset temperature 2>/dev/null | grep -oE '[0-9]+'")
+            if current and tonumber(current) == 4000 then
+                M.exec_silent("hyprctl hyprsunset temperature 6000 >/dev/null 2>&1")
+                M.notify("Nightlight", "Nightlight disabled")
+            else
+                M.exec_silent("hyprctl hyprsunset temperature 4000 >/dev/null 2>&1")
+                M.notify("Nightlight", "Nightlight enabled (4000K)")
+            end
+        else
+            os.execute("setsid uwsm-app -- hyprsunset >/dev/null 2>&1 &")
+            os.execute("sleep 1")
+            M.exec_silent("hyprctl hyprsunset temperature 4000 >/dev/null 2>&1")
+            M.notify("Nightlight", "Nightlight enabled (4000K)")
+        end
+    end
+end
+
+-- =============================================================================
+-- IDLE LOCK
+-- =============================================================================
+
+function M.toggle_idle_lock()
+    if M.is_process_running("hypridle") then
+        M.kill_process("hypridle")
+        M.notify("Idle Lock", "Idle lock disabled")
+    else
+        os.execute("uwsm-app -- hypridle >/dev/null 2>&1 &")
+        M.notify("Idle Lock", "Idle lock enabled")
+    end
+end
+
+-- =============================================================================
+-- NOTIFICATIONS TOGGLE
+-- =============================================================================
+
+function M.toggle_notifications()
+    if M.cmd_exists("makoctl") then
+        M.exec_silent("makoctl mode -t do-not-disturb >/dev/null 2>&1")
+        local modes = M.exec("makoctl mode 2>/dev/null")
+        if modes and modes:find("do%%-not%%-disturb") then
+            M.notify("Notifications", "Do Not Disturb enabled")
+        else
+            M.notify("Notifications", "Notifications enabled")
+        end
+    end
+end
+
+-- =============================================================================
+-- TOP BAR / WAYBAR
+-- =============================================================================
+
+function M.toggle_waybar()
+    if M.is_process_running("waybar") then
+        M.kill_process("waybar", "9")
+    else
+        os.execute("uwsm-app -- waybar >/dev/null 2>&1 &")
+    end
+end
+
+function M.restart_waybar()
+    M.kill_process("waybar", "9")
+    os.execute("uwsm-app -- waybar >/dev/null 2>&1 &")
+end
+
+-- =============================================================================
+-- HYPRLAND WINDOW / WORKSPACE MANAGEMENT
+-- =============================================================================
+
+function M.toggle_workspace_layout()
+    M.exec_silent("hyprctl dispatch togglesplit >/dev/null 2>&1")
+end
+
+function M.toggle_window_gaps()
+    M.exec_silent("hyprctl dispatch setfloating && hyprctl dispatch resizeactive exact 0 0 >/dev/null 2>&1")
+end
+
+function M.toggle_window_ratio()
+    M.exec_silent("hyprctl reload >/dev/null 2>&1")
+end
+
+function M.cycle_monitor_scaling()
+    M.exec_silent("hyprctl dispatch cyclemonitorscale +0.1 >/dev/null 2>&1")
+end
+
+-- =============================================================================
+-- REMINDERS
+-- =============================================================================
+
+function M.set_reminder(minutes, message)
+    minutes = minutes or 60
+    message = message or "Reminder"
+    if M.cmd_exists("systemd-run") then
+        local cmd = "systemd-run --user --on-active=" .. minutes .. "m --collect --timer-property=Description='Reminder' bash -c \"notify-send -u critical 'Reminder' '" .. message .. "'\" >/dev/null 2>&1"
+        M.exec_silent(cmd)
+        M.notify("Reminder", "Set for " .. minutes .. " minutes")
+    end
+end
+
+function M.show_reminders()
+    if M.cmd_exists("systemctl") then
+        M.exec_silent("systemctl --user list-timers --all >/dev/null 2>&1")
+    end
+end
+
+function M.clear_reminders()
+    if M.cmd_exists("systemctl") then
+        M.exec_silent("systemctl --user list-timers --all --no-pager 2>/dev/null | grep -E '\\.timer' | awk '{print $1}' | xargs -r systemctl --user stop >/dev/null 2>&1")
+    end
+end
+
+-- =============================================================================
+-- SHARE
+-- =============================================================================
+
+function M.share_clipboard()
+    if M.cmd_exists("localsend") then
+        M.exec_silent("systemd-run --user --quiet --collect localsend --headless send --clipboard >/dev/null 2>&1 &")
+    end
+end
+
+function M.share_file(path)
+    if M.cmd_exists("localsend") then
+        M.exec_silent("systemd-run --user --quiet --collect localsend --headless send '" .. path .. "' >/dev/null 2>&1 &")
+    end
+end
+
+function M.share_folder(path)
+    if M.cmd_exists("localsend") then
+        M.exec_silent("systemd-run --user --quiet --collect localsend --headless send '" .. path .. "' >/dev/null 2>&1 &")
+    end
+end
+
+-- =============================================================================
+-- CAPTURE
+-- =============================================================================
+
+function M.screenshot(fullscreen)
+    local timestamp = os.date("%Y%m%d-%H%M%S")
+    local dir = os.getenv("XDG_PICTURES_DIR") or (os.getenv("HOME") .. "/Pictures")
+    local filename = dir .. "/screenshot-" .. timestamp .. ".png"
+    if fullscreen then
+        M.exec_silent("grim '" .. filename .. "' >/dev/null 2>&1")
+    else
+        M.exec_silent("grim -g \"$(slurp)\" '" .. filename .. "' >/dev/null 2>&1")
+    end
+    if M.cmd_exists("wl-copy") then
+        M.exec_silent("wl-copy < '" .. filename .. "' >/dev/null 2>&1")
+    end
+    M.notify("Screenshot", "Saved to " .. filename)
+    return filename
+end
+
+function M.start_screenrecord(with_audio, with_mic, with_webcam)
+    local script = "wmenu-capture-screenrecording"
+    if with_webcam then
+        script = script .. " --with-webcam"
+    end
+    if with_mic then
+        script = script .. " --with-microphone-audio"
+    end
+    if with_audio then
+        script = script .. " --with-desktop-audio"
+    end
+    M.exec_silent(script .. " >/dev/null 2>&1 &")
+end
+
+function M.stop_screenrecord()
+    M.exec_silent("wmenu-capture-screenrecording --stop-recording >/dev/null 2>&1")
+end
+
+function M.text_extraction()
+    local tmpfile = "/tmp/wmenu-ocr.png"
+    M.exec_silent("grim -g \"$(slurp)\" '" .. tmpfile .. "' >/dev/null 2>&1")
+    if M.cmd_exists("tesseract") then
+        local text = M.exec("tesseract '" .. tmpfile .. "' - -l eng 2>/dev/null")
+        if text and text ~= "" then
+            if M.cmd_exists("wl-copy") then
+                M.write_file("/tmp/wmenu-ocr-text.txt", text)
+                M.exec_silent("wl-copy < /tmp/wmenu-ocr-text.txt >/dev/null 2>&1")
+            end
+            M.notify("OCR", "Text copied to clipboard")
+            return text
+        end
+    end
+    return nil
+end
+
+function M.color_picker()
+    if M.cmd_exists("hyprpicker") then
+        M.exec_silent("hyprpicker -a >/dev/null 2>&1 &")
+    end
+end
+
+-- =============================================================================
+-- TERMINAL / EDITOR / LAUNCHERS
+-- =============================================================================
+
+function M.launch_about()
+    if M.cmd_exists("fastfetch") then
+        os.execute("fastfetch &")
+    else
+        os.execute("uname -a")
+    end
+end
+
+function M.launch_editor(path)
+    local editor = os.getenv("EDITOR") or "nvim"
+    if M.cmd_exists(editor) then
+        os.execute("setsid " .. editor .. " '" .. path .. "' >/dev/null 2>&1 &")
+    else
+        os.execute("setsid vi '" .. path .. "' >/dev/null 2>&1 &")
+    end
+end
+
+function M.terminal_run(cmd)
+    for _, term in ipairs({"foot", "kitty", "alacritty", "ghostty", "wezterm"}) do
+        if M.cmd_exists(term) then
+            os.execute(term .. " " .. cmd .. " &")
+            return
+        end
+    end
+    os.execute("xdg-terminal-exec " .. cmd .. " &")
+end
+
+function M.launch_walker(args)
+    if M.cmd_exists("walker") then
+        os.execute("setsid walker " .. (args or "") .. " >/dev/null 2>&1 &")
+    end
+end
+
+-- =============================================================================
+-- PACKAGE MANAGEMENT (thin wrappers calling omarchy-* or fallback)
+-- =============================================================================
+
+function M.pkg_install(pkg)
+    if M.cmd_exists("omarchy-pkg-install") then
+        M.terminal_run("omarchy-pkg-install '" .. pkg .. "'")
+    else
+        M.terminal_run("'sudo pacman -S --needed --noconfirm '" .. pkg .. "' 2>/dev/null || sudo apt-get install -y '" .. pkg .. "' 2>/dev/null || sudo dnf install -y '" .. pkg .. "''")
+    end
+end
+
+function M.pkg_aur_install(pkg)
+    if M.cmd_exists("omarchy-pkg-aur-install") then
+        M.terminal_run("omarchy-pkg-aur-install '" .. pkg .. "'")
+    else
+        M.terminal_run("yay -S '" .. pkg .. "'")
+    end
+end
+
+function M.pkg_remove(pkg)
+    if M.cmd_exists("omarchy-pkg-remove") then
+        M.terminal_run("omarchy-pkg-remove '" .. pkg .. "'")
+    else
+        M.terminal_run("'sudo pacman -Rns --noconfirm '" .. pkg .. "' 2>/dev/null || sudo apt-get remove -y '" .. pkg .. "' 2>/dev/null || sudo dnf remove -y '" .. pkg .. "''")
+    end
+end
+
+function M.update_system()
+    if M.cmd_exists("omarchy-update") then
+        M.terminal_run("omarchy-update")
+    else
+        M.terminal_run("'sudo pacman -Syu --noconfirm 2>/dev/null || sudo apt-get update && sudo apt-get upgrade -y 2>/dev/null || sudo dnf upgrade -y 2>/dev/null'")
+    end
+end
+
+-- =============================================================================
+-- WM / THEME / CONFIG
+-- =============================================================================
+
+function M.wm_config_dir()
+    return M.OMARCHY_CONFIG
+end
+
+function M.restart_service(name)
+    M.exec_silent("systemctl --user restart " .. name .. ".service >/dev/null 2>&1")
+end
+
+function M.wm_restart()
+    M.exec_silent("hyprctl reload >/dev/null 2>&1")
+end
+
+function M.restart_walker()
+    M.kill_process("walker", "9")
+    os.execute("setsid walker >/dev/null 2>&1 &")
+end
+
+function M.restart_waybar_lua()
+    M.restart_waybar()
+end
+
+function M.restart_hypridle()
+    M.kill_process("hypridle")
+    os.execute("uwsm-app -- hypridle >/dev/null 2>&1 &")
+end
+
+function M.restart_hyprlock()
+    -- no-op, hyprlock is on-demand
+end
+
+function M.restart_hyprsunset()
+    M.kill_process("hyprsunset")
+    os.execute("uwsm-app -- hyprsunset >/dev/null 2>&1 &")
+end
+
+function M.restart_swayosd()
+    M.exec_silent("systemctl --user restart swayosd.service >/dev/null 2>&1")
+end
+
+function M.theme_install()
+    if M.cmd_exists("omarchy-theme-install") then
+        M.terminal_run("omarchy-theme-install")
+    else
+        M.notify("Theme", "Theme installer not available", "critical")
+    end
+end
+
+function M.theme_bg_install()
+    if M.cmd_exists("omarchy-theme-bg-install") then
+        M.terminal_run("omarchy-theme-bg-install")
+    else
+        M.notify("Theme", "Background installer not available", "critical")
+    end
+end
+
+function M.channel_set(channel)
+    if M.cmd_exists("omarchy-channel-set") then
+        M.terminal_run("omarchy-channel-set " .. channel)
+    else
+        M.notify("Channel", "Channel switcher not available", "critical")
+    end
+end
+
+function M.setup_dns()
+    if M.cmd_exists("omarchy-setup-dns") then
+        M.terminal_run("omarchy-setup-dns")
+    else
+        M.notify("DNS", "DNS setup not available", "critical")
+    end
+end
+
+function M.menu_keybindings()
+    if M.cmd_exists("omarchy-menu-keybindings") then
+        os.execute("omarchy-menu-keybindings &")
+    else
+        M.notify("Keybindings", "Keybindings menu not available", "critical")
+    end
+end
+
+-- =============================================================================
+-- RETURN MODULE
+-- =============================================================================
+
+return M

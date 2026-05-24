@@ -81,15 +81,15 @@ show_menu() {
       echo -e "$options" | walker --dmenu --width 295 --minheight 1 --maxheight 630 -p "$prompt…" "${args[@]}" 2>/dev/null
       return
       ;;
-    tui)
-      # Pure bash TUI menu — no external dependencies
-      tui_menu "$prompt" "$options"
-      return
-      ;;
-    *)
-      echo "Error: unknown menu backend '$backend'" >&2
-      return 1
-      ;;
+     tui)
+       # Pure bash TUI menu — no external dependencies
+       tui_menu "$prompt" "$options"
+       return
+       ;;
+     *)
+       echo "Error: unknown menu backend '$backend'" >&2
+       return 1
+       ;;
   esac
 }
 
