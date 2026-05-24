@@ -667,6 +667,200 @@ function M.menu_keybindings()
         M.notify("Keybindings", "Keybindings menu not available", "critical")
     end
 end
+end
+
+-- =============================================================================
+-- PLATFORM / DISTRIBUTION / WM DETECTION
+-- =============================================================================
+
+function M.detect_distro()
+    local f = io.open("/etc/os-release", "r")
+    if not f then
+        return nil
+    end
+    local content = f:read("*a")
+    f:close()
+    local id = content:match('^ID="?([^"\n]+)"?'):lower()
+    local id_like = content:match('ID_LIKE="?([^"\n]+)"?'):lower()
+    if id:find("arch") or id:find("artix") or id:find("manjaro") or
+       id:find("endeavouros") or id:find("cachyos") or id:find("garuda") then
+        return "arch"
+    end
+    if id:find("debian") or id:find("ubuntu") or id:find("linuxmint") or
+       id:find("pop") or id:find("elementary") or id:find("zorin") or
+       id:find("kali") or id:find("raspbian") then
+        return "debian"
+    end
+    if id:find("fedora") or id:find("rhel") or id:find("centos") or
+       id:find("rockylinux") or id:find("almalinux") or id:find("nobara") then
+        return "fedora"
+    end
+    if id_like then
+        if id_like:find("arch") then return "arch" end
+        if id_like:find("debian") then return "debian" end
+        if id_like:find("fedora") or id_like:find("rhel") then return "fedora" end
+    end
+    return nil
+end
+
+function M.detect_wm()
+    if os.getenv("HYPRLAND_INSTANCE_SIGNATURE") then
+        return "hyprland"
+    end
+    if os.getenv("SWAYSOCK") then
+        return "sway"
+    end
+    local desktop = os.getenv("XDG_CURRENT_DESKTOP") or ""
+    desktop = desktop:lower()
+    if desktop:find("hyprland") then return "hyprland" end
+    if desktop:find("sway") then return "sway" end
+    return nil
+end
+
+function M.hw_hybrid_gpu()
+    local handle = io.popen("lspci -nn 2>/dev/null | grep -c '\\[030[02]\\]'")
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+        local count = tonumber(result) or 0
+        return count >= 2
+    end
+    return false
+end
+
+function M.hw_touchpad()
+    local handle = io.popen("grep -qE 'touchpad|trackpad' /proc/bus/input/devices 2>/dev/null && echo 'yes' || echo 'no'")
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+        return result:find("yes") ~= nil
+    end
+    return false
+end
+
+function M.hw_touchscreen()
+    local handle = io.popen("grep -qiE 'touchscreen' /proc/bus/input/devices 2>/dev/null && echo 'yes' || echo 'no'")
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+        return result:find("yes") ~= nil
+    end
+    return false
+end
+
+-- =============================================================================
+-- PACKAGE MANAGEMENT (port from pkg.sh to pure Lua)
+-- =============================================================================
+
+function M.pkg_manager()
+    local distro = M.detect_distro()
+    if distro == "arch" then return "pacman" end
+    if distro == "debian" then return "apt" end
+    if distro == "fedora" then return "dnf" end
+    return nil
+end
+
+function M.pkg_install(packages)
+    local manager = M.pkg_manager()
+    if not manager then
+        M.notify("Error", "Unknown package manager", "critical")
+        return false
+    end
+    if manager == "pacman" then
+        return M.exec_silent("sudo pacman -S --needed --noconfirm " .. packages) == 0
+    elseif manager == "apt" then
+        return M.exec_silent("sudo apt-get install -y " .. packages) == 0
+    elseif manager == "dnf" then
+        return M.exec_silent("sudo dnf install -y " .. packages) == 0
+    end
+end
+
+function M.pkg_remove(packages)
+    local manager = M.pkg_manager()
+    if not manager then
+        M.notify("Error", "Unknown package manager", "critical")
+        return false
+    end
+    if manager == "pacman" then
+        return M.exec_silent("sudo pacman -Rns --noconfirm " .. packages) == 0
+    elseif manager == "apt" then
+        return M.exec_silent("sudo apt-get remove -y " .. packages) == 0
+    elseif manager == "dnf" then
+        return M.exec_silent("sudo dnf remove -y " .. packages) == 0
+    end
+end
+
+function M.pkg_update()
+    local manager = M.pkg_manager()
+    if not manager then
+        M.notify("Error", "Unknown package manager", "critical")
+        return false
+    end
+    if manager == "pacman" then
+        return M.exec_silent("sudo pacman -Syu --noconfirm") == 0
+    elseif manager == "apt" then
+        return M.exec_silent("sudo apt-get update && sudo apt-get upgrade -y") == 0
+    elseif manager == "dnf" then
+        return M.exec_silent("sudo dnf upgrade -y") == 0
+    end
+end
+
+function M.pkg_installed(pkg)
+    local manager = M.pkg_manager()
+    if not manager then return false end
+    if manager == "pacman" then
+        return M.exec("pacman -Qi " .. pkg .. " 2>/dev/null")
+    elseif manager == "apt" then
+        return M.exec("dpkg -s " .. pkg .. " 2>/dev/null")
+    elseif manager == "dnf" then
+        return M.exec("rpm -q " .. pkg .. " 2>/dev/null")
+    end
+end
+
+-- =============================================================================
+-- TERMINAL / EDITOR / LAUNCHERS (port from core.sh)
+-- =============================================================================
+
+function M.terminal_detect()
+    for _, term in ipairs({"foot", "kitty", "alacritty", "ghostty", "wezterm"}) do
+        if M.cmd_exists(term) then
+            return term
+        end
+    end
+    if M.cmd_exists("xdg-terminal-exec") then
+        return "xdg-terminal-exec"
+    end
+    return nil
+end
+
+function M.terminal_run(cmd)
+    local term = M.terminal_detect()
+    if term == "xdg-terminal-exec" then
+        os.execute("xdg-terminal-exec " .. cmd .. " &")
+    elseif term then
+        os.execute(term .. " " .. cmd .. " &")
+    else
+        M.notify("Error", "No terminal emulator found", "critical")
+    end
+end
+
+function M.present_terminal(cmd)
+    local term = M.terminal_detect()
+    if term then
+        os.execute(term .. " -- /bin/bash -c '" .. cmd .. "; echo; read -rp \"Press Enter to close...\"'")
+    else
+        M.notify("Error", "No terminal emulator found", "critical")
+    end
+end
+
+function M.open_in_editor(path)
+    local editor = os.getenv("EDITOR") or "nvim"
+    if M.cmd_exists(editor) then
+        os.execute("setsid " .. editor .. " '" .. path .. "' >/dev/null 2>&1 &")
+    else
+        os.execute("setsid vi '" .. path .. "' >/dev/null 2>&1 &")
+    end
+end
 
 -- =============================================================================
 -- RETURN MODULE
