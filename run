@@ -1,6 +1,6 @@
 #!/bin/bash
-# Main entry point for wmenu (omarchy-menu)
-# Launches walker --provider menus:top-level when walker and display are available.
+# Run entry point for wmenu (omarchy-menu)
+# Launches walker --provider menus:start when walker and display are available.
 
 set -euo pipefail
 
@@ -15,11 +15,17 @@ has_display() {
     [[ -n "${DISPLAY:-}" ]] || [[ -n "${WAYLAND_DISPLAY:-}" ]]
 }
 
-# If walker and display exist, launch Elephant/Walker with top-level provider
+# If walker and display exist, launch Elephant/Walker with start provider
 if has_walker && has_display; then
-    walker --provider menus:top-level "$@"
+    walker --provider menus:start "$@"
     exit 0
 fi
+
+# No walker or no display — show error and exit
+# (TUI fallback lives on the 'tui' branch)
+echo "Error: Walker is not available and display is missing." >&2
+echo "If you need TTY support, check out the 'tui' branch." >&2
+exit 1
 
 # No walker or no display — show error and exit
 # (TUI fallback lives on the 'tui' branch)

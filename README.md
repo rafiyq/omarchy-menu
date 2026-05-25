@@ -2,17 +2,25 @@
 
 A distro-agnostic, WM-agnostic hierarchical menu system for Linux desktops. Supports Arch/Debian/Fedora and Hyprland/Sway. Provides a modular menu for launching apps, configuring the system, installing software, and more.
 
-Uses [walker](https://github.com/abceric/walker) (with native Elephant/Lua providers) as the menu backend. The `main` entry point auto-detects Walker and falls back to an error message (check out the `tui` branch for TTY/SSH scenarios).
+Uses [walker](https://github.com/abceric/walker) (with native Elephant/Lua providers) as the menu backend. The `run` entry point auto-detects Walker and falls back to an error message (check out the `tui` branch for TTY/SSH scenarios).
 
 ## Project Structure
 
 ```
 omarchy-menu/
-├── main                 # Entry point — launches walker --provider menus:top-level
+├── run                  # Entry point — launches walker --provider menus:start
 ├── Makefile             # lint (shellcheck + luacheck), test (smoke), fmt targets
 ├── .luacheckrc          # Luacheck configuration for Lua providers
-├── menus/              # Native Elephant Lua providers (flat top-level directory)
-│   ├── top-level.lua   # Main entry point
+├── menus/              # Native Elephant Lua providers (flat directory)
+│   ├── start.lua       # Main entry point
+│   ├── system.lua      # Lock, suspend, hibernate, logout, reboot, shutdown
+│   ├── style.lua       # Theme, font, background, Hyprland look & feel, screensaver, about
+│   ├── setup.lua       # Audio, wifi, bluetooth, power profile, monitors, keybindings, config editors
+│   ├── install.lua     # Packages, AUR, web apps, browsers, editors, terminals, AI, gaming, dev environments
+│   ├── remove.lua      # Remove software
+│   ├── update.lua      # System updates, channel switch, themes, firmware
+│   ├── capture.lua     # Screenshots, screenrecord, OCR, color picker
+│   └── trigger.lua     # Reminders, share, toggles (screensaver, nightlight, idle lock, notifications, waybar, etc.)
 │   ├── system.lua      # Lock, suspend, hibernate, logout, reboot, shutdown
 │   ├── style.lua       # Theme, font, background, Hyprland look & feel, screensaver, about
 │   ├── setup.lua       # Audio, wifi, bluetooth, power profile, monitors, keybindings, config editors
@@ -32,11 +40,11 @@ omarchy-menu/
 ## Usage
 
 ```bash
-# Launch the main menu (auto-detects walker, falls back to bash TUI)
-./main
+# Launch the start menu (requires walker + display)
+./run
 
-# With walker + display available, this is equivalent to:
-walker --provider menus:top-level
+# Or invoke walker directly
+walker --provider menus:start
 ```
 
 ## Development
@@ -76,7 +84,7 @@ lua tests/test-utils.lua
 
 2. **Bash TUI on `tui` Branch**
    - `lib/tui.sh` lives on the `tui` branch.
-   - `main` only launches `walker --provider menus:top-level`.
+   - `main` only launches `walker --provider menus:start`.
    - Future migration to a Lua TUI is possible.
 
 3. **Inlined Utilities**
@@ -85,7 +93,7 @@ lua tests/test-utils.lua
    
 ## Branches
 
-- `main` — Walker + Elephant Lua providers (default)
+- `run` — Walker + Elephant Lua providers (default)
 - `tui` — Bash TUI fallback kept for TTY/SSH scenarios
 
 To switch to the TUI branch:

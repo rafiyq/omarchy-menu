@@ -5,7 +5,7 @@ FixedOrder = true
 HideFromProviderlist = false
 Cache = false
 
-Parent = "top-level"
+Parent = "start"
 
 Action = "%VALUE%"
 

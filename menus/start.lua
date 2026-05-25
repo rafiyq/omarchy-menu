@@ -1,5 +1,5 @@
-Name = "top-level"
-NamePretty = "Main Menu"
+Name = "start"
+NamePretty = "Start Menu"
 Icon = "start-here-symbolic"
 FixedOrder = true
 HideFromProviderlist = false

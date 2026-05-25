@@ -11,7 +11,7 @@ script_dir = script_dir:match("(.*/)") or "./"
 local menus_dir = script_dir .. "../menus/"
 
 local providers = {
-    "top-level", "system", "style", "setup",
+    "start", "system", "style", "setup",
     "install", "remove", "update", "capture", "trigger",
 }
 
