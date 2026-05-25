@@ -84,7 +84,7 @@ lua tests/test-utils.lua
 
 2. **Bash TUI on `tui` Branch**
    - `lib/tui.sh` lives on the `tui` branch.
-   - `main` only launches `walker --provider menus:start`.
+   - `run` only launches `walker --provider menus:":start"`.
    - Future migration to a Lua TUI is possible.
 
 3. **Inlined Utilities**
