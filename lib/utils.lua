@@ -556,32 +556,63 @@ end
 function M.pkg_install(pkg)
     if M.cmd_exists("omarchy-pkg-install") then
         M.terminal_run("omarchy-pkg-install '" .. pkg .. "'")
+        return
+    end
+    local manager = M.pkg_manager()
+    if manager == "pacman" then
+        M.terminal_run("sudo pacman -S --needed --noconfirm '" .. pkg .. "'")
+    elseif manager == "apt" then
+        M.terminal_run("sudo apt-get install -y '" .. pkg .. "'")
+    elseif manager == "dnf" then
+        M.terminal_run("sudo dnf install -y '" .. pkg .. "'")
     else
-        M.terminal_run("'sudo pacman -S --needed --noconfirm '" .. pkg .. "' 2>/dev/null || sudo apt-get install -y '" .. pkg .. "' 2>/dev/null || sudo dnf install -y '" .. pkg .. "''")
+        M.notify("Error", "Unknown package manager", "critical")
     end
 end
 
 function M.pkg_aur_install(pkg)
     if M.cmd_exists("omarchy-pkg-aur-install") then
         M.terminal_run("omarchy-pkg-aur-install '" .. pkg .. "'")
-    else
+        return
+    end
+    if M.cmd_exists("yay") then
         M.terminal_run("yay -S '" .. pkg .. "'")
+    else
+        M.notify("Error", "AUR helper (yay) not found", "critical")
     end
 end
 
 function M.pkg_remove(pkg)
     if M.cmd_exists("omarchy-pkg-remove") then
         M.terminal_run("omarchy-pkg-remove '" .. pkg .. "'")
+        return
+    end
+    local manager = M.pkg_manager()
+    if manager == "pacman" then
+        M.terminal_run("sudo pacman -Rns --noconfirm '" .. pkg .. "'")
+    elseif manager == "apt" then
+        M.terminal_run("sudo apt-get remove -y '" .. pkg .. "'")
+    elseif manager == "dnf" then
+        M.terminal_run("sudo dnf remove -y '" .. pkg .. "'")
     else
-        M.terminal_run("'sudo pacman -Rns --noconfirm '" .. pkg .. "' 2>/dev/null || sudo apt-get remove -y '" .. pkg .. "' 2>/dev/null || sudo dnf remove -y '" .. pkg .. "''")
+        M.notify("Error", "Unknown package manager", "critical")
     end
 end
 
 function M.update_system()
     if M.cmd_exists("omarchy-update") then
         M.terminal_run("omarchy-update")
+        return
+    end
+    local manager = M.pkg_manager()
+    if manager == "pacman" then
+        M.terminal_run("sudo pacman -Syu --noconfirm")
+    elseif manager == "apt" then
+        M.terminal_run("sudo apt-get update && sudo apt-get upgrade -y")
+    elseif manager == "dnf" then
+        M.terminal_run("sudo dnf upgrade -y")
     else
-        M.terminal_run("'sudo pacman -Syu --noconfirm 2>/dev/null || sudo apt-get update && sudo apt-get upgrade -y 2>/dev/null || sudo dnf upgrade -y 2>/dev/null'")
+        M.notify("Error", "Unknown package manager", "critical")
     end
 end
 
