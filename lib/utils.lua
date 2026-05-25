@@ -667,7 +667,6 @@ function M.menu_keybindings()
         M.notify("Keybindings", "Keybindings menu not available", "critical")
     end
 end
-end
 
 -- =============================================================================
 -- PLATFORM / DISTRIBUTION / WM DETECTION
@@ -680,10 +679,12 @@ function M.detect_distro()
     end
     local content = f:read("*a")
     f:close()
-    local id = content:match('^ID="?([^"\n]+)"?'):lower()
-    local id_like = content:match('ID_LIKE="?([^"\n]+)"?'):lower()
-    if id:find("arch") or id:find("artix") or id:find("manjaro") or
-       id:find("endeavouros") or id:find("cachyos") or id:find("garuda") then
+    local id = content:match('ID="?([^"\n]+)"?')
+    local id_like = content:match('ID_LIKE="?([^"\n]+)"?')
+    if id then id = id:lower() end
+    if id_like then id_like = id_like:lower() end
+    if id and (id:find("arch") or id:find("artix") or id:find("manjaro") or
+       id:find("endeavouros") or id:find("cachyos") or id:find("garuda")) then
         return "arch"
     end
     if id:find("debian") or id:find("ubuntu") or id:find("linuxmint") or
@@ -1108,8 +1109,7 @@ function M.font_set(name)
     end
     local content = f:read("*a")
     f:close()
-    content = content:gsub("font%.name=[^
-]+", "font.name=" .. name)
+    content = content:gsub("font%.name=[^\n]+", "font.name=" .. name)
     M.write_file(conf, content)
     M.notify("Font", "Set to " .. name)
     return true
