@@ -9,7 +9,7 @@ Parent = "top-level"
 
 Action = "%VALUE%"
 
--- Self-contained path: place utils.lua alongside menu providers
+-- Self-contained path
 local function find_utils_path()
     local paths = {
         os.getenv("HOME") .. "/.config/elephant/lib/utils.lua",
@@ -46,30 +46,17 @@ function GetEntries()
     entries[#entries + 1] = {
         Text = "System Packages",
         Icon = "system-software-update",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-update\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.update_system()'",
     }
 
     -- Individual Channel Updates
-    entries[#entries + 1] = {
-        Text = "Channel: Stable",
-        Icon = "system-software-update",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"stable\")'",
-    }
-    entries[#entries + 1] = {
-        Text = "Channel: Rc",
-        Icon = "system-software-update",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"rc\")'",
-    }
-    entries[#entries + 1] = {
-        Text = "Channel: Edge",
-        Icon = "system-software-update",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"edge\")'",
-    }
-    entries[#entries + 1] = {
-        Text = "Channel: Dev",
-        Icon = "system-software-update",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"dev\")'",
-    }
+    for _, channel in ipairs({"Stable", "Rc", "Edge", "Dev"}) do
+        entries[#entries + 1] = {
+            Text = "Channel: " .. channel,
+            Icon = "system-software-update",
+            Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"" .. channel:lower() .. "\")'",
+        }
+    end
 
     -- Extra Themes
     entries[#entries + 1] = {

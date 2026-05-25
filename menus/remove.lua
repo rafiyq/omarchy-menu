@@ -9,7 +9,7 @@ Parent = "top-level"
 
 Action = "%VALUE%"
 
--- Self-contained path: place utils.lua alongside menu providers
+-- Self-contained path
 local function find_utils_path()
     local paths = {
         os.getenv("HOME") .. "/.config/elephant/lib/utils.lua",
@@ -46,7 +46,7 @@ function GetEntries()
     entries[#entries + 1] = {
         Text = "Package",
         Icon = "package",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-pkg-remove\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_remove()'",
     }
 
     -- Web App

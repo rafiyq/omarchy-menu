@@ -46,14 +46,14 @@ function GetEntries()
     entries[#entries + 1] = {
         Text = "Package",
         Icon = "package",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-pkg-install\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_install()'",
     }
 
     -- AUR
     entries[#entries + 1] = {
         Text = "AUR Package",
         Icon = "package-aur",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-pkg-aur-install\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_aur_install()'",
     }
 
     -- Web App
@@ -148,14 +148,14 @@ function GetEntries()
     entries[#entries + 1] = {
         Text = "Theme",
         Icon = "preferences-desktop-theme",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-theme-install\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.theme_install()'",
     }
 
     -- Style: Background
     entries[#entries + 1] = {
         Text = "Background",
         Icon = "preferences-desktop-wallpaper",
-        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-theme-bg-install\")'",
+        Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.theme_bg_install()'",
     }
 
     return entries
