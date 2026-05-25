@@ -2,10 +2,41 @@
 
 A distro-agnostic, WM-agnostic hierarchical menu system for Linux desktops. Supports Arch/Debian/Fedora and Hyprland/Sway. Provides a modular menu for launching apps, configuring the system, installing software, and more.
 
-Uses [walker](https://github.com/abceric/walker) (with native Elephant/Lua providers), [rofi](https://github.com/davatorium/rofi), or a built-in pure-bash TUI as the menu backend. Falls back to TUI automatically when no GUI menu is available, making it usable in TTY, over SSH, or on minimal systems.
+Uses [walker](https://github.com/abceric/walker) (with native Elephant/Lua providers) as the menu backend. The `main` entry point auto-detects Walker and falls back to an error message (check out the `tui` branch for TTY/SSH scenarios).
 
 ## Project Structure
 
+```
+wmenu/
+├── main                 # Entry point — launches walker --provider menus:top-level
+├── Makefile             # lint (shellcheck + luacheck), test (smoke), fmt targets
+├── .luacheckrc           # Luacheck configuration for Lua providers
+├── menus/               # Native Elephant Lua providers (flat top-level directory)
+│   ├── top-level.lua   # Main entry point
+│   ├── system.lua      # Lock, suspend, hibernate, logout, reboot, shutdown
+│   ├── style.lua       # Theme, font, background, Hyprland look & feel, screensaver, about
+│   ├── setup.lua       # Audio, wifi, bluetooth, power profile, monitors, keybindings, config editors
+│   ├── install.lua     # Packages, AUR, web apps, browsers, editors, terminals, AI, gaming, dev environments
+│   ├── remove.lua      # Remove software
+│   ├── update.lua      # System updates, channel switch, themes, firmware
+│   ├── capture.lua     # Screenshots, screenrecord, OCR, color picker
+│   └── trigger.lua     # Reminders, share, toggles (screensaver, nightlight, idle lock, notifications, waybar, etc.)
+├── lib/
+│   ├── utils.lua        # Shared Lua library (no external dependencies)
+│   └── menu.sh          # Bash menu display (walker/rofi/tui) — legacy, kept for reference
+└── tests/
+    ├── test-providers.lua # Smoke-test all menu providers
+    └── test-utils.lua     # Smoke-test shared Lua library
+```
+
+## Usage
+
+```bash
+# Launch the main menu (requires walker + display)
+./main
+
+# Or invoke walker directly
+walker --provider menus:top-level
 ```
 wmenu/
 ├── main                 # Entry point — launches walker --provider menus:top-level or bash TUI fallback
@@ -113,11 +144,24 @@ lua tests/test-utils.lua
 2. **Self-Contained**
    - All Lua code lives inside `omarchy-menu/`.
    - No external dependency on `elephant-menus`.
-
-3. **Bash TUI Kept for Now**
-   - `lib/tui.sh` remains as the TTY fallback.
+3. **Bash TUI on `tui` Branch**
+   - `lib/tui.sh` lives on the `tui` branch.
+   - `main` only launches `walker --provider menus:top-level`.
    - Future migration to a Lua TUI is possible.
 
 4. **Inlined Utilities**
    - `lib/utils.lua` replaces `omarchy-*` bash scripts with pure Lua or thin wrappers.
    - Configurable paths via `XDG_*` environment variables.
+   - Package manager scripts (pkg_install, pkg_remove, update_system) detect
+distro and call pacman/apt/dnf directly, with optional `omarchy-*` wrapper
+fallback when available.
+
+## Branches
+
+- `main` — Walker + Elephant Lua providers (default, TUI removed)
+- `tui` — Bash TUI fallback kept for TTY/SSH scenarios
+
+To switch to the TUI branch:
+```bash
+git checkout tui
+```
