@@ -52,123 +52,140 @@ function GetEntries()
     end
 
     -- Audio (open pavucontrol or fallback)
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Audio",
+        Subtext = "Configure sound devices",
         Icon = "audio-card",
         Value = "pavucontrol &",
-    }
+    })
 
     -- Wifi (open nm-connection-editor or fallback)
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Wifi",
+        Subtext = "Manage network connections",
         Icon = "network-wireless",
         Value = "nm-connection-editor &",
-    }
+    })
 
     -- Bluetooth
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Bluetooth",
+        Subtext = "Pair Bluetooth devices",
         Icon = "bluetooth",
         Value = "blueberry &",
-    }
+    })
 
     -- Power Profile (via walker sub-menu)
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Power Profile",
+        Subtext = "Select power mode",
         Icon = "battery",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:powerprofiles --width 300 --minheight 200\")'",
-    }
+    })
 
     -- Monitors
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Monitors",
+        Subtext = "Configure display settings",
         Icon = "display",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/monitors.conf\")' && notify-send 'Monitors' 'Restart Hyprland to apply changes'",
-    }
+    })
 
     -- Keybindings
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Keybindings",
+        Subtext = "View/modify shortcuts",
         Icon = "input-keyboard",
         Value = lua_cmd("menu_keybindings"),
-    }
+    })
 
     -- Input
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Input",
+        Subtext = "Configure input devices",
         Icon = "input-mouse",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/input.conf\")'",
-    }
+    })
 
     -- Defaults
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Defaults",
+        Subtext = "Reset to defaults",
         Icon = "preferences-desktop-default",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:defaults\")'",
-    }
+    })
 
     -- DNS
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "DNS",
+        Subtext = "Configure name servers",
         Icon = "network-workgroup",
         Value = lua_cmd("setup_dns"),
-    }
+    })
 
     -- Security
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Security",
+        Subtext = "Security & firewall",
         Icon = "security-high",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:security\")'",
-    }
+    })
 
     -- Config: Hyprland
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Hyprland",
+        Subtext = "Edit Hyprland config",
         Icon = "hyprland",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/hyprland.conf\")' && hyprctl reload",
-    }
+    })
 
     -- Config: Hypridle
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Hypridle",
+        Subtext = "Edit Hypridle config",
         Icon = "hyprland",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/hypridle.conf\")' && systemctl --user restart hypridle",
-    }
+    })
 
     -- Config: Hyprlock
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Hyprlock",
+        Subtext = "Edit Hyprlock config",
         Icon = "system-lock-screen",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/hyprlock.conf\")'",
-    }
+    })
 
     -- Config: Hyprsunset
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Hyprsunset",
+        Subtext = "Edit Hyprsunset config",
         Icon = "weather-clear-night",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/hypr/hyprsunset.conf\")' && systemctl --user restart hyprsunset",
-    }
+    })
 
     -- Config: SwayOSD
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: SwayOSD",
+        Subtext = "Edit SwayOSD config",
         Icon = "preferences-desktop-notifications",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/swayosd/config.toml\")' && systemctl --user restart swayosd",
-    }
+    })
 
     -- Config: Walker
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Walker",
+        Subtext = "Edit Walker config",
         Icon = "preferences-system-search",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/walker/config.toml\")' && m.restart_walker()",
-    }
+    })
 
     -- Config: Waybar
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Config: Waybar",
+        Subtext = "Edit Waybar config",
         Icon = "panel",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. home .. "/.config/waybar/config.jsonc\")' && systemctl --user restart waybar",
-    }
+    })
 
     return entries
 end

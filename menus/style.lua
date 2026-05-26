@@ -49,25 +49,28 @@ function GetEntries()
     end
 
     -- Theme
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Theme",
+        Subtext = "Change color scheme",
         Icon = "preferences-desktop-theme",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:omarchythemes --width 800 --minheight 400\")'",
-    }
+    })
 
     -- Font
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Font",
+        Subtext = "Select system font",
         Icon = "font-select",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:omarchyfonts --width 350 --minheight 400\")'",
-    }
+    })
 
     -- Background
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Background",
+        Subtext = "Set desktop wallpaper",
         Icon = "preferences-desktop-wallpaper",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_walker(\"-m menus:omarchyBackgroundSelector --width 800 --minheight 400\")'",
-    }
+    })
 
     local config_dir = os.getenv("HOME") .. "/.config/hypr"
     if utils_path then
@@ -78,25 +81,28 @@ function GetEntries()
     end
 
     -- Hyprland Look & Feel
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Hyprland Look & Feel",
+        Subtext = "Adjust window appearance",
         Icon = "hyprland",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_editor(\"" .. config_dir .. "/looknfeel.conf\")'",
-    }
+    })
 
     -- Screensaver
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Edit Screensaver",
+        Subtext = "Configure screensaver",
         Icon = "preferences-desktop-screensaver",
         Value = lua_cmd("launch_screensaver"),
-    }
+    })
 
     -- About
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "About",
+        Subtext = "System information",
         Icon = "dialog-information",
         Value = lua_cmd("launch_about"),
-    }
+    })
 
     return entries
 end

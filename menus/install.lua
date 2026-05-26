@@ -43,81 +43,92 @@ function GetEntries()
     local utils_path = find_utils_path()
 
     -- Package
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Package",
+        Subtext = "Install a package",
         Icon = "package",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_install()'",
-    }
+    })
 
     -- AUR
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "AUR Package",
+        Subtext = "Install from AUR",
         Icon = "package-aur",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_aur_install()'",
-    }
+    })
 
     -- Web App
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Web App",
+        Subtext = "Install web application",
         Icon = "applications-internet",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-webapp-install\")'",
-    }
+    })
 
     -- TUI
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "TUI",
+        Subtext = "Install terminal apps",
         Icon = "terminal",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-tui-install\")'",
-    }
+    })
 
     -- Browser
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Browser",
+        Subtext = "Install web browser",
         Icon = "web-browser",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-browser\")'",
-    }
+    })
 
     -- Editor: VSCode
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "VSCode",
+        Subtext = "Install VS Code",
         Icon = "code",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-vscode\")'",
-    }
+    })
 
     -- Editor: Zed
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Zed",
+        Subtext = "Install Zed editor",
         Icon = "zed",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-zed\")'",
-    }
+    })
 
     -- Terminal
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Terminal",
+        Subtext = "Install terminal emulator",
         Icon = "terminal",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-terminal\")'",
-    }
+    })
 
     -- AI: Dictation
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Dictation",
+        Subtext = "Install voice typing",
         Icon = "microphone-sensitivity-high",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-voxtype-install\")'",
-    }
+    })
 
     -- Gaming: Steam
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Steam",
+        Subtext = "Install Steam gaming",
         Icon = "steam",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-gaming-steam\")'",
-    }
+    })
 
     -- Gaming: Lutris
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Lutris",
+        Subtext = "Install Lutris games",
         Icon = "lutris",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-gaming-lutris\")'",
-    }
+    })
 
     -- Development environments
     local dev_envs = {
@@ -137,26 +148,28 @@ function GetEntries()
     }
 
     for _, env in ipairs(dev_envs) do
-        entries[#entries + 1] = {
+        table.insert(entries, {
             Text = env.name,
             Icon = env.icon,
             Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-install-dev-env " .. env.flag .. "\")'",
-        }
+        })
     end
 
     -- Style: Theme
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Theme",
+        Subtext = "Install color theme",
         Icon = "preferences-desktop-theme",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.theme_install()'",
-    }
+    })
 
     -- Style: Background
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Background",
+        Subtext = "Install background image",
         Icon = "preferences-desktop-wallpaper",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.theme_bg_install()'",
-    }
+    })
 
     return entries
 end

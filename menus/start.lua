@@ -48,67 +48,76 @@ function GetEntries()
     end
 
     -- Apps
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Apps",
+        Subtext = "Launch applications",
         Icon = "applications-other",
         Value = "walker --provider desktopapplications -p Launch...",
-    }
+    })
 
     -- Trigger
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Trigger",
+        Subtext = "Reminders, capture, share, toggles",
         Icon = "preferences-system-notifications",
         SubMenu = "trigger",
-    }
+    })
 
     -- Style
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Style",
+        Subtext = "Theme, font, background, screensaver",
         Icon = "preferences-desktop-theme",
         SubMenu = "style",
-    }
+    })
 
     -- Setup
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Setup",
+        Subtext = "Audio, wifi, bluetooth, defaults, config",
         Icon = "preferences-system",
         SubMenu = "setup",
-    }
+    })
 
     -- Install
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Install",
+        Subtext = "Packages, apps, themes, dev environments",
         Icon = "software-install",
         SubMenu = "install",
-    }
+    })
 
     -- Remove
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Remove",
+        Subtext = "Packages, apps, themes",
         Icon = "edit-delete",
         SubMenu = "remove",
-    }
+    })
 
     -- Update
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Update",
+        Subtext = "System, themes, firmware, configs",
         Icon = "software-update-available",
         SubMenu = "update",
-    }
+    })
 
     -- About
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "About",
+        Subtext = "System information",
         Icon = "dialog-information",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.launch_about()'",
-    }
+    })
 
     -- System
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "System",
+        Subtext = "Lock, suspend, hibernate, reboot, shutdown",
         Icon = "system-shutdown",
         SubMenu = "system",
-    }
+    })
 
     return entries
 end

@@ -45,41 +45,48 @@ function GetEntries()
         return "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m." .. fn .. "()'"
     end
 
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Screensaver",
+        Subtext = "Start screensaver",
         Icon = "preferences-desktop-screensaver",
         Value = lua_cmd("launch_screensaver"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Lock",
+        Subtext = "Lock screen now",
         Icon = "system-lock-screen",
         Value = lua_cmd("lock_screen"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Suspend",
+        Subtext = "Suspend to RAM",
         Icon = "system-suspend",
         Value = lua_cmd("suspend"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Hibernate",
+        Subtext = "Suspend to disk",
         Icon = "system-hibernate",
         Value = lua_cmd("hibernate"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Logout",
+        Subtext = "Log out of session",
         Icon = "system-log-out",
         Value = lua_cmd("logout"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Reboot",
+        Subtext = "Restart system",
         Icon = "system-reboot",
         Value = lua_cmd("reboot"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Shutdown",
+        Subtext = "Power off system",
         Icon = "system-shutdown",
         Value = lua_cmd("shutdown"),
-    }
+    })
 
     return entries
 end

@@ -43,34 +43,37 @@ function GetEntries()
     local utils_path = find_utils_path()
 
     -- System / Package Update
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "System Packages",
+        Subtext = "Update all packages",
         Icon = "system-software-update",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.update_system()'",
-    }
+    })
 
     -- Individual Channel Updates
     for _, channel in ipairs({"Stable", "Rc", "Edge", "Dev"}) do
-        entries[#entries + 1] = {
+        table.insert(entries, {
             Text = "Channel: " .. channel,
             Icon = "system-software-update",
             Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.channel_set(\"" .. channel:lower() .. "\")'",
-        }
+        })
     end
 
     -- Extra Themes
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Extra Themes",
+        Subtext = "Update omarchy themes",
         Icon = "preferences-desktop-theme",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-theme-update\")'",
-    }
+    })
 
     -- Firmware
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Firmware",
+        Subtext = "Update system firmware",
         Icon = "firmware",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-firmware-update\")'",
-    }
+    })
 
     return entries
 end

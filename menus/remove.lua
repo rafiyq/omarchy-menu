@@ -43,53 +43,60 @@ function GetEntries()
     local utils_path = find_utils_path()
 
     -- Package
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Package",
+        Subtext = "Remove a package",
         Icon = "package",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.pkg_remove()'",
-    }
+    })
 
     -- Web App
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Web App",
+        Subtext = "Remove web application",
         Icon = "applications-internet",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-webapp-remove\")'",
-    }
+    })
 
     -- TUI
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "TUI",
+        Subtext = "Remove terminal apps",
         Icon = "terminal",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-tui-remove\")'",
-    }
+    })
 
     -- Browser
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Browser",
+        Subtext = "Remove web browser",
         Icon = "web-browser",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-remove-browser\")'",
-    }
+    })
 
     -- Dictation
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Dictation",
+        Subtext = "Remove voice typing",
         Icon = "microphone-sensitivity-high",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-voxtype-remove\")'",
-    }
+    })
 
     -- Gaming: Steam
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Steam",
+        Subtext = "Remove Steam gaming",
         Icon = "steam",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-remove-gaming-steam\")'",
-    }
+    })
 
     -- Gaming: Lutris
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Lutris",
+        Subtext = "Remove Lutris games",
         Icon = "lutris",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.terminal_run(\"omarchy-remove-gaming-lutris\")'",
-    }
+    })
 
     return entries
 end

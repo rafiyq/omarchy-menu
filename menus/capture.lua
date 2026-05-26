@@ -48,36 +48,42 @@ function GetEntries()
         return "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m." .. fn .. "()'"
     end
 
-    entries[#entries + 1] = {
+    table.insert(entries, {
         Text = "Screenshot (Region)",
+        Subtext = "Select area to capture",
         Icon = "camera-photo",
         Value = lua_cmd("screenshot", "false"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Screenshot (Fullscreen)",
+        Subtext = "Capture entire screen",
         Icon = "camera-photo",
         Value = lua_cmd("screenshot", "true"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Screenrecord",
+        Subtext = "Start video recording",
         Icon = "media-record",
         Value = "lua -e 'local m = dofile(\"" .. (utils_path or "") .. "\"); m.start_screenrecord(false, false, false)'",
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Stop Screenrecord",
+        Subtext = "Stop video recording",
         Icon = "media-playback-stop",
         Value = lua_cmd("stop_screenrecord"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Text Extraction (OCR)",
+        Subtext = "Extract text from image",
         Icon = "edit-select-all",
         Value = lua_cmd("text_extraction"),
-    }
-    entries[#entries + 1] = {
+    })
+    table.insert(entries, {
         Text = "Color Picker",
+        Subtext = "Pick color from screen",
         Icon = "color-picker",
         Value = lua_cmd("color_picker"),
-    }
+    })
 
     return entries
 end
